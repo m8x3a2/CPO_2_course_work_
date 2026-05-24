@@ -1,0 +1,233 @@
+0: Вкладки регистация и войти
+[object Object] при
+fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff 
+INFO:     127.0.0.1:61223 - "POST /auth/register HTTP/1.1" 422 Unprocessable Content
+ограничение на пароль, email 8-30 символов, английские, цифры
+ограничение на имя пользователя 5-30 символов, английские, цифры
+A-Z a-z 0-9
+email уникальный, имя пользователя нет
+имя пользователя не играет роли, по сути это просто псевдоним
+вход должен осуществлятся по логину и паролю
+показывает справку-ограничения
+
+
+1: Вкладка мои билеты
+1.1: Во вкладке мои билеты не пишет имя кинотеатра. надо чтобы показывало имя кинотеатра.
+Кинотеатр / Зал у меня там пишет только зал почему-то
+
+
+2: Вкладка Сеансы
+cancelled finished active на русском должны быть
+
+
+3: Вкладка Админ
+Ошибка: [object Object] при создании промокода 11, что за ошибка? при добавлении промокода
+
+Два списка с scroll bar один для промокодов, другой для пользователей. также два поиска
+поск промокодов три поля 
+Код	Деньги	Использовано
+поиск по пользователям тоже три поля поиска
+Имя пользователя Email	Роль
+
+в разделе Админ, убрать в выборе guest, оставить client и admin. сделать на русском отображение, клиент, админ
+Также в разделе Админ добавить поиск по пользователем, и рядом с ними есть кнопка удалить 
+загрузка картинок, принимается png и jpg до 10 мб. base64 вообще не использовать, мы загружаем изображение и храним его.
+4:
+TRUNCATE TABLE promo_redemptions, tickets, sessions, halls, films, cinemas, promo_codes, users RESTART IDENTITY CASCADE;
+измени команду(возможно она устарела) чтобы я очистил всю бд и она не конфликтовала со старой(не надо делать миграции со старой к новой, лишняя морока)
+5:
+название кинотеатра уникально, название фильма уникально
+РљРёРЅРѕС‚РµР°С‚СЂ СЃ С‚Р°РєРёРј РЅР°Р·РІР°РЅРёРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ также исправить эту странность, осталось от прошлой нейронки, она как-то не смогла русские символы печатать
+6: так как многое поменялось, надо наверное исправить импорт/экспорт
+При попытке удаления зала, вылазит ошибка. Если удаляю через Кинотеаты -> подробнее или Сеансы иои если удалял кинотеатр
+исправить, чтобы при попытке удаления он выдавал предупреждение, что это также удалит всё связанное с этим полем, кроме билетов, их не трогаем. то есть если мы удаляем кинотеатр например, то удаляется с ним и сеанс, если он там есть, а если удаляем зал, то удаляется сеанс, если он с ним связан
+то есть билеты это как архив, он не связан с таблицами по primary foreign key, туда данные записываются. то есть даже если удалим сеансы фильмы и кинотеатры или изменим их, билеты останутся у человека и они не изменятся
+
+INFO:     127.0.0.1:49461 - "DELETE /halls/6 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1936, in _exec_single_context
+    self.dialect.do_executemany(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor,
+        ^^^^^^^
+    ...<2 lines>...
+        context,
+        ^^^^^^^^
+    )
+    ^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\psycopg2.py", line 800, in do_executemany
+    cursor.executemany(statement, parameters)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.NotNullViolation: ОШИБКА:  значение NULL в столбце "session_id" отношения "tickets" нарушает ограничение NOT NULL
+DETAIL:  Ошибочная строка содержит (7, 4, null, 2026-05-18 10:17:03.017372, 1).
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 415, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 56, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\fastapi\applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\middleware\cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\middleware\cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\fastapi\routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\fastapi\routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\fastapi\routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\fastapi\routing.py", line 330, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\routers\halls.py", line 66, in delete_hall
+    db.flush()
+    ~~~~~~~~^^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4331, in flush
+    self._flush(objects)
+    ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4466, in _flush
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 121, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4427, in _flush
+    flush_context.execute()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 466, in execute
+    rec.execute(self)
+    ~~~~~~~~~~~^^^^^^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.mapper,
+        ^^^^^^^^^^^^
+        uow.states_for_mapper_hierarchy(self.mapper, False, False),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        uow,
+        ^^^^
+    )
+    ^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 85, in save_obj
+    _emit_update_statements(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        base_mapper,
+        ^^^^^^^^^^^^
+    ...<3 lines>...
+        update,
+        ^^^^^^^
+    )
+    ^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 912, in _emit_update_statements
+    c = connection.execute(
+        statement, multiparams, execution_options=execution_options
+    )
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1936, in _exec_single_context
+    self.dialect.do_executemany(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor,
+        ^^^^^^^
+    ...<2 lines>...
+        context,
+        ^^^^^^^^
+    )
+    ^
+  File "C:\Users\UserA\Max\SPO\CourseWork\Cinemas02\backend\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\psycopg2.py", line 800, in do_executemany
+    cursor.executemany(statement, parameters)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.IntegrityError: (psycopg2.errors.NotNullViolation) ОШИБКА:  значение NULL в столбце "session_id" отношения "tickets" нарушает ограничение NOT NULL
+DETAIL:  Ошибочная строка содержит (7, 4, null, 2026-05-18 10:17:03.017372, 1).
+
+[SQL: UPDATE tickets SET session_id=%(session_id)s WHERE tickets.id = %(tickets_id)s]
+[parameters: [{'session_id': None, 'tickets_id': 7}, {'session_id': None, 'tickets_id': 9}, {'session_id': None, 'tickets_id': 10}, {'session_id': None, 'tickets_id': 11}, {'session_id': None, 'tickets_id': 12}]]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
