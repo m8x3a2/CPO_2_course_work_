@@ -1,5 +1,7 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
+
+const ROLE_LABELS = { client: 'Клиент', admin: 'Админ' }
 
 export default function Layout() {
   const { user, logout } = useAuth()
@@ -14,7 +16,7 @@ export default function Layout() {
     <div className="layout">
       <nav>
         <div className="nav-inner">
-          <NavLink to="/" className="nav-brand">🎬 КиноГород</NavLink>
+          <NavLink to="/" className="nav-brand">КиноГород</NavLink>
           <div className="nav-links">
             <NavLink to="/cinemas">Кинотеатры</NavLink>
             <NavLink to="/films">Фильмы</NavLink>
@@ -26,7 +28,7 @@ export default function Layout() {
           <div className="nav-user">
             {user ? (
               <>
-                <span>{user.username} <span className={`badge badge-${user.role}`}>{user.role}</span></span>
+                <span>{user.username} <span className={`badge badge-${user.role}`}>{ROLE_LABELS[user.role] || user.role}</span></span>
                 <button className="btn-outline btn btn-sm" onClick={handleLogout}>Выйти</button>
               </>
             ) : (

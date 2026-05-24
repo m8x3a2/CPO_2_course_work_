@@ -1,11 +1,13 @@
+from datetime import date, datetime
+from typing import Optional
+import re
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_
-from typing import Optional
-from datetime import datetime, date
-import re
+
 from database import get_db
-import models, schemas, auth
+from archive import backfill_ticket_archive_fields
+import auth, models, schemas
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
@@ -68,10 +70,7 @@ def list_sessions(
     if date_to:
         q = q.filter(models.Session.datetime <= datetime.combine(date_to, datetime.max.time()))
     if has_seats is not None:
-        if has_seats:
-            q = q.filter(models.Session.free_seats > 0)
-        else:
-            q = q.filter(models.Session.free_seats == 0)
+        q = q.filter(models.Session.free_seats > 0 if has_seats else models.Session.free_seats == 0)
     if status:
         q = q.filter(models.Session.status == status)
 
@@ -120,7 +119,7 @@ def create_session(
     if not film:
         raise HTTPException(status_code=404, detail="Фильм не найден")
     if data.free_seats > hall.total_seats:
-        raise HTTPException(status_code=400, detail="Мест больше, чем вмещает зал")
+        raise HTTPException(status_code=400, detail="Свободных мест больше, чем мест в зале")
 
     session = models.Session(**data.model_dump())
     db.add(session)
@@ -155,6 +154,7 @@ def delete_session(
     session = db.query(models.Session).filter(models.Session.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Сеанс не найден")
+    backfill_ticket_archive_fields(db, [session_id])
     db.delete(session)
     db.commit()
 

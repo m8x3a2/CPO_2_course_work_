@@ -5,6 +5,7 @@ import { useAuth } from '../AuthContext'
 import { fmtDateTime, fmtPrice } from '../utils'
 
 const EMPTY_SESSION = { film_id: '', hall_id: '', datetime: '', price: '', free_seats: '', status: 'active' }
+const STATUS_LABELS = { active: 'Активен', cancelled: 'Отменен', finished: 'Завершен' }
 
 export default function SessionsPage() {
   const { user, setUser } = useAuth()
@@ -84,7 +85,7 @@ export default function SessionsPage() {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Удалить сеанс?')) return
+    if (!confirm('Удалить сеанс? Билеты останутся в архиве пользователей без изменений.')) return
     try {
       await sessionsApi.delete(id)
       load()
@@ -180,9 +181,9 @@ export default function SessionsPage() {
               <div className="form-group">
                 <label>Статус</label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-                  <option value="active">active</option>
-                  <option value="cancelled">cancelled</option>
-                  <option value="finished">finished</option>
+                  <option value="active">Активен</option>
+                  <option value="cancelled">Отменен</option>
+                  <option value="finished">Завершен</option>
                 </select>
               </div>
             </div>
@@ -211,9 +212,9 @@ export default function SessionsPage() {
           <label>Статус</label>
           <select value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}>
             <option value="">Все</option>
-            <option value="active">active</option>
-            <option value="cancelled">cancelled</option>
-            <option value="finished">finished</option>
+            <option value="active">Активен</option>
+            <option value="cancelled">Отменен</option>
+            <option value="finished">Завершен</option>
           </select>
         </div>
         <button type="submit">Найти</button>
@@ -248,7 +249,7 @@ export default function SessionsPage() {
                     <td>{fmtDateTime(s.datetime)}</td>
                     <td>{fmtPrice(s.price)}</td>
                     <td>{s.free_seats}</td>
-                    <td><span className={`badge badge-${s.status}`}>{s.status}</span></td>
+                    <td><span className={`badge badge-${s.status}`}>{STATUS_LABELS[s.status] || s.status}</span></td>
                     <td>
                       <div className="flex-gap">
                         {user && s.status === 'active' && s.free_seats > 0 && (
@@ -267,9 +268,9 @@ export default function SessionsPage() {
                               style={{ width: 'auto', padding: '3px 6px', fontSize: 12 }}
                               onChange={e => handleStatusChange(s.id, e.target.value)}
                             >
-                              <option value="active">active</option>
-                              <option value="cancelled">cancelled</option>
-                              <option value="finished">finished</option>
+                              <option value="active">Активен</option>
+                              <option value="cancelled">Отменен</option>
+                              <option value="finished">Завершен</option>
                             </select>
                             <button className="btn-danger btn-sm" onClick={() => handleDelete(s.id)}>🗑</button>
                           </>

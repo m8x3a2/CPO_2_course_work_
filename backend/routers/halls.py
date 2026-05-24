@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from database import get_db
-import models, schemas, auth
+from archive import backfill_ticket_archive_fields
+import auth, models, schemas
 
 router = APIRouter(prefix="/halls", tags=["Halls"])
 
@@ -62,6 +64,7 @@ def delete_hall(
     if not hall:
         raise HTTPException(status_code=404, detail="Зал не найден")
     cinema = hall.cinema
+    backfill_ticket_archive_fields(db, [session.id for session in hall.sessions])
     db.delete(hall)
     db.flush()
     if cinema:

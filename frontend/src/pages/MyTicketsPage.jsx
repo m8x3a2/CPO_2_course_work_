@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ticketsApi } from '../api/index'
 import { useAuth } from '../AuthContext'
+import { ticketsApi } from '../api/index'
 import { fmtDateTime, fmtPrice } from '../utils'
 
 export default function MyTicketsPage() {
@@ -78,11 +78,11 @@ export default function MyTicketsPage() {
               {tickets.map(t => (
                 <tr key={t.id}>
                   <td className="text-muted text-sm">{t.id}</td>
-                  <td><Link to={`/films/${t.session.film.id}`}>{t.session.film.title}</Link></td>
-                  <td>{t.session.hall.name}</td>
-                  <td>{fmtDateTime(t.session.datetime)}</td>
-                  <td>{fmtPrice(t.session.price)}</td>
-                  <td>{t.seat_number ?? '—'}</td>
+                  <td>{t.film_title}</td>
+                  <td>{t.cinema_name}<br /><span className="text-muted text-sm">{t.hall_name}</span></td>
+                  <td>{fmtDateTime(t.session_datetime)}</td>
+                  <td>{fmtPrice(t.price)}</td>
+                  <td>{t.seat_number ?? '-'}</td>
                   <td className="text-muted text-sm">{fmtDateTime(t.purchased_at)}</td>
                   <td>
                     <button className="btn-danger btn-sm" onClick={() => handleDelete(t.id)}>Удалить</button>

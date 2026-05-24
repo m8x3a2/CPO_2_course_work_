@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { filmsApi, sessionsApi, resolveImageSrc } from '../api/index'
+import { filmsApi, sessionsApi, resolveEntityImageSrc, usePlaceholderOnError } from '../api/index'
 import { fmtDateTime, fmtPrice } from '../utils'
 
 function fmtDuration(minutes) {
@@ -34,11 +34,14 @@ export default function FilmDetailPage() {
     <div>
       <Link to="/films" className="text-muted text-sm">← Все фильмы</Link>
       <h1 className="page-title mt-8">{film.title}</h1>
-      {film.image_data && (
-        <div className="entity-hero-container">
-          <img className="entity-hero-image-contain" src={resolveImageSrc(film.image_data)} alt={film.title} />
-        </div>
-      )}
+      <div className="entity-hero-container">
+        <img
+          className="entity-hero-image-contain"
+          src={resolveEntityImageSrc('film', film.image_data)}
+          onError={usePlaceholderOnError('film')}
+          alt={film.title}
+        />
+      </div>
 
       <div className="card mt-16">
         <table>

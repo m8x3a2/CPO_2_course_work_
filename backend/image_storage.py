@@ -1,6 +1,3 @@
-import base64
-import binascii
-import re
 from pathlib import Path
 from uuid import uuid4
 
@@ -8,14 +5,10 @@ from uuid import uuid4
 UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
-_DATA_URL_RE = re.compile(r"^data:(?P<mime>image/[a-zA-Z0-9.+-]+);base64,(?P<data>.+)$", re.DOTALL)
 _EXTENSIONS = {
     "image/jpeg": ".jpg",
     "image/jpg": ".jpg",
     "image/png": ".png",
-    "image/gif": ".gif",
-    "image/webp": ".webp",
-    "image/svg+xml": ".svg",
 }
 
 
@@ -31,22 +24,16 @@ def save_image_data(value: str | None, category: str) -> str | None:
     if value.startswith("/uploads/") or value.startswith("http://") or value.startswith("https://"):
         return value
 
-    match = _DATA_URL_RE.match(value)
-    if not match:
-        return value
+    raise ValueError("Сначала загрузите PNG или JPG файл")
 
-    mime = match.group("mime").lower()
+
+def save_upload_bytes(content: bytes, content_type: str | None, category: str) -> str:
+    mime = (content_type or "").lower()
     extension = _EXTENSIONS.get(mime)
     if not extension:
-        raise ValueError("Unsupported image format")
-
-    try:
-        content = base64.b64decode(match.group("data"), validate=True)
-    except (binascii.Error, ValueError) as exc:
-        raise ValueError("Invalid base64 image data") from exc
-
+        raise ValueError("Поддерживаются только PNG и JPG")
     if len(content) > MAX_IMAGE_BYTES:
-        raise ValueError("Image is too large")
+        raise ValueError("Файл слишком большой: максимум 10 МБ")
 
     directory = UPLOAD_DIR / category
     directory.mkdir(parents=True, exist_ok=True)

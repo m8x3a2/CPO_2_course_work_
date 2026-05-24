@@ -1,15 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { cinemasApi, resolveImageSrc } from '../api/index'
+import { cinemasApi, resolveEntityImageSrc, resolveImageSrc, uploadImage, usePlaceholderOnError } from '../api/index'
 import { useAuth } from '../AuthContext'
 
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+function validateImage(file) {
+  if (!['image/png', 'image/jpeg'].includes(file.type)) throw new Error('Можно загрузить только PNG или JPG')
+  if (file.size > 10 * 1024 * 1024) throw new Error('Размер изображения не должен превышать 10 МБ')
 }
 
 const EMPTY_CINEMA = { name: '', address: '', description: '', image_data: '' }
@@ -65,7 +61,7 @@ export default function CinemasPage() {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Удалить кинотеатр?')) return
+    if (!confirm('Удалить кинотеатр? Связанные залы и сеансы будут удалены. Билеты останутся в архиве пользователей без изменений.')) return
     try {
       await cinemasApi.delete(id)
       await load(filters)
@@ -104,13 +100,24 @@ export default function CinemasPage() {
             </div>
             <div className="form-group">
               <label>Картинка</label>
-              <input type="file" accept="image/*" onChange={async e => {
+              <input type="file" accept="image/png,image/jpeg" onChange={async e => {
                 const file = e.target.files?.[0]
-                const imageData = file ? await fileToDataUrl(file) : ''
-                setForm(f => ({ ...f, image_data: imageData }))
+                if (!file) return
+                try {
+                  validateImage(file)
+                  const { path } = await uploadImage(file, 'cinemas')
+                  setForm(f => ({ ...f, image_data: path }))
+                } catch (err) {
+                  setFormError(err.message)
+                }
               }} />
             </div>
-            {form.image_data && <img className="entity-image" src={resolveImageSrc(form.image_data)} alt="" />}
+            <img
+              className="entity-image"
+              src={resolveEntityImageSrc('cinema', form.image_data)}
+              onError={usePlaceholderOnError('cinema')}
+              alt=""
+            />
             <div className="flex-gap">
               <button type="submit">Создать</button>
               <button type="button" className="btn-outline" onClick={() => setShowForm(false)}>Отмена</button>
@@ -193,15 +200,25 @@ function CinemaCard({ cinema, isAdmin, onDelete, onEdit }) {
           </div>
           <div className="form-group">
             <label>Картинка</label>
-            <input type="file" accept="image/*" onChange={async e => {
+            <input type="file" accept="image/png,image/jpeg" onChange={async e => {
               const file = e.target.files?.[0]
               if (file) {
-                const imageData = await fileToDataUrl(file)
-                setForm(f => ({ ...f, image_data: imageData }))
+                try {
+                  validateImage(file)
+                  const { path } = await uploadImage(file, 'cinemas')
+                  setForm(f => ({ ...f, image_data: path }))
+                } catch (err) {
+                  setErr(err.message)
+                }
               }
             }} />
           </div>
-          {form.image_data && <img className="entity-image" src={resolveImageSrc(form.image_data)} alt="" />}
+          <img
+            className="entity-image"
+            src={resolveEntityImageSrc('cinema', form.image_data)}
+            onError={usePlaceholderOnError('cinema')}
+            alt=""
+          />
           <div className="flex-gap">
             <button type="submit">Сохранить</button>
             <button type="button" className="btn-outline" onClick={() => setEditing(false)}>Отмена</button>
@@ -213,7 +230,12 @@ function CinemaCard({ cinema, isAdmin, onDelete, onEdit }) {
 
   return (
     <div className="card">
-      {cinema.image_data && <img className="entity-image" src={resolveImageSrc(cinema.image_data)} alt={cinema.name} />}
+      <img
+        className="entity-image"
+        src={resolveEntityImageSrc('cinema', cinema.image_data)}
+        onError={usePlaceholderOnError('cinema')}
+        alt={cinema.name}
+      />
       <div className="flex-between">
         <Link to={`/cinemas/${cinema.id}`} style={{ fontWeight: 600, fontSize: 16 }}>{cinema.name}</Link>
         {isAdmin && (

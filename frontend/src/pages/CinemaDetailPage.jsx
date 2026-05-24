@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { cinemasApi, hallsApi, sessionsApi, resolveImageSrc } from '../api/index'
+import { cinemasApi, hallsApi, sessionsApi, resolveEntityImageSrc, usePlaceholderOnError } from '../api/index'
 import { useAuth } from '../AuthContext'
 import { fmtDateTime, fmtPrice } from '../utils'
+
+const STATUS_LABELS = { active: 'Активен', cancelled: 'Отменен', finished: 'Завершен' }
 
 export default function CinemaDetailPage() {
   const { id } = useParams()
@@ -46,7 +48,7 @@ export default function CinemaDetailPage() {
   }
 
   async function handleDeleteHall(hallId) {
-    if (!confirm('Удалить зал?')) return
+    if (!confirm('Удалить зал? Связанные сеансы будут удалены. Билеты останутся в архиве пользователей без изменений.')) return
     try {
       await hallsApi.delete(hallId)
       await load()
@@ -63,11 +65,14 @@ export default function CinemaDetailPage() {
     <div>
       <Link to="/cinemas" className="text-muted text-sm">← Все кинотеатры</Link>
       <h1 className="page-title mt-8">{cinema.name}</h1>
-      {cinema.image_data && (
-        <div className="entity-hero-container">
-          <img className="entity-hero-image-contain" src={resolveImageSrc(cinema.image_data)} alt={cinema.name} />
-        </div>
-      )}
+      <div className="entity-hero-container">
+        <img
+          className="entity-hero-image-contain"
+          src={resolveEntityImageSrc('cinema', cinema.image_data)}
+          onError={usePlaceholderOnError('cinema')}
+          alt={cinema.name}
+        />
+      </div>
       <p className="text-muted">📍 {cinema.address}</p>
       {cinema.description && <p className="text-sm mt-8" style={{ whiteSpace: 'pre-wrap' }}>{cinema.description}</p>}
 
@@ -138,7 +143,7 @@ export default function CinemaDetailPage() {
                     <td>{fmtDateTime(s.datetime)}</td>
                     <td>{fmtPrice(s.price)}</td>
                     <td>{s.free_seats}</td>
-                    <td><span className={`badge badge-${s.status}`}>{s.status}</span></td>
+                    <td><span className={`badge badge-${s.status}`}>{STATUS_LABELS[s.status] || s.status}</span></td>
                   </tr>
                 ))}
               </tbody>

@@ -5,7 +5,6 @@ import enum
 
 
 class UserRole(str, enum.Enum):
-    guest = "guest"
     client = "client"
     admin = "admin"
 
@@ -14,14 +13,14 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, nullable=False, index=True)
-    email = Column(String(100), unique=True, nullable=False)
+    username = Column(String(30), nullable=False, index=True)
+    email = Column(String(30), unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(Enum(UserRole), default=UserRole.client, nullable=False)
     balance = Column(Float, nullable=False, default=0)
 
-    tickets = relationship("Ticket", back_populates="user")
-    promo_redemptions = relationship("PromoRedemption", back_populates="user")
+    tickets = relationship("Ticket", back_populates="user", cascade="all, delete-orphan")
+    promo_redemptions = relationship("PromoRedemption", back_populates="user", cascade="all, delete-orphan")
 
 
 class Cinema(Base):
@@ -53,22 +52,23 @@ class Film(Base):
     __tablename__ = "films"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(300), nullable=False)
+    title = Column(String(300), unique=True, nullable=False)
     director = Column(String(200), nullable=False)
     operator = Column(String(200), nullable=True)
     genre = Column(String(100), nullable=False)
     studio = Column(String(200), nullable=True)
-    actors = Column(Text, nullable=True)  # comma-separated list
+    actors = Column(Text, nullable=True)
     description = Column(Text, nullable=True)
     year = Column(Integer, nullable=True)
     duration_minutes = Column(Integer, nullable=True)
     image_data = Column(Text, nullable=True)
 
-    sessions = relationship("Session", back_populates="film")
+    sessions = relationship("Session", back_populates="film", cascade="all, delete-orphan")
 
 
 class Session(Base):
-    """Репертуар — сеанс конкретного фильма в конкретном зале"""
+    """Сеанс конкретного фильма в конкретном зале."""
+
     __tablename__ = "sessions"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -77,11 +77,10 @@ class Session(Base):
     datetime = Column(DateTime, nullable=False)
     price = Column(Float, nullable=False)
     free_seats = Column(Integer, nullable=False)
-    status = Column(String(50), default="active")  # active, cancelled, finished
+    status = Column(String(50), default="active")
 
     film = relationship("Film", back_populates="sessions")
     hall = relationship("Hall", back_populates="sessions")
-    tickets = relationship("Ticket", back_populates="session")
 
 
 class Ticket(Base):
@@ -90,12 +89,16 @@ class Ticket(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    session_id = Column(Integer, ForeignKey("sessions.id"), nullable=False)
+    session_id = Column(Integer, nullable=False)
     purchased_at = Column(DateTime, nullable=False)
     seat_number = Column(Integer, nullable=True)
+    film_title = Column(String(300), nullable=False)
+    cinema_name = Column(String(200), nullable=False)
+    hall_name = Column(String(100), nullable=False)
+    session_datetime = Column(DateTime, nullable=False)
+    price = Column(Float, nullable=False)
 
     user = relationship("User", back_populates="tickets")
-    session = relationship("Session", back_populates="tickets")
 
 
 class PromoCode(Base):

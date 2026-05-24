@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 import { authApi } from '../api/index'
 
 export default function LoginPage() {
-  const [form, setForm] = useState({ username: '', password: '' })
+  const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -16,7 +16,7 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const data = await authApi.login(form.username, form.password)
+      const data = await authApi.login(form.email, form.password)
       await login(data.access_token)
       navigate('/')
     } catch (err) {
@@ -27,16 +27,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ maxWidth: 380, margin: '40px auto' }}>
+    <div style={{ maxWidth: 420, margin: '40px auto' }}>
       <div className="card">
-        <h1 className="page-title">Вход</h1>
+        <h1 className="page-title">Войти</h1>
+        <div className="alert alert-info">
+          Вход выполняется по email и паролю. Email: 8-30 символов, английские буквы, цифры и @ . _ - Пароль: 8-30 символов A-Z, a-z, 0-9.
+        </div>
         {error && <div className="alert alert-error">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Имя пользователя</label>
+            <label>Email</label>
             <input
-              value={form.username}
-              onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+              type="email"
+              value={form.email}
+              onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
               required
               autoFocus
             />
@@ -54,8 +58,6 @@ export default function LoginPage() {
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(value => !value)}
-                aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
-                title={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
               >
                 {showPassword ? 'Скрыть' : 'Показать'}
               </button>

@@ -61,6 +61,7 @@ def export_data(
                 "actors": f.actors,
                 "description": f.description,
                 "year": f.year,
+                "duration_minutes": f.duration_minutes,
                 "image_data": f.image_data,
             }
             for f in db.query(models.Film).all()
@@ -84,6 +85,11 @@ def export_data(
                 "session_id": t.session_id,
                 "purchased_at": _dt(t.purchased_at),
                 "seat_number": t.seat_number,
+                "film_title": t.film_title,
+                "cinema_name": t.cinema_name,
+                "hall_name": t.hall_name,
+                "session_datetime": _dt(t.session_datetime),
+                "price": t.price,
             }
             for t in db.query(models.Ticket).all()
         ],
@@ -133,7 +139,7 @@ def import_data(
             username=item["username"],
             email=item["email"],
             hashed_password=item["hashed_password"],
-            role=models.UserRole(item.get("role", "client")),
+            role=models.UserRole(item.get("role") if item.get("role") in {"client", "admin"} else "client"),
             balance=item.get("balance", 0) or 0,
         ))
     for item in payload.get("cinemas", []):
@@ -142,7 +148,7 @@ def import_data(
         db.add(models.Cinema(**data))
     for item in payload.get("films", []):
         data = {k: item.get(k) for k in (
-            "id", "title", "director", "operator", "genre", "studio", "actors", "description", "year", "image_data"
+            "id", "title", "director", "operator", "genre", "studio", "actors", "description", "year", "duration_minutes", "image_data"
         )}
         data["image_data"] = save_image_data(data.get("image_data"), "films")
         db.add(models.Film(**data))
@@ -163,8 +169,30 @@ def import_data(
     db.flush()
 
     for item in payload.get("tickets", []):
-        data = {k: item.get(k) for k in ("id", "user_id", "session_id", "seat_number")}
+        data = {k: item.get(k) for k in (
+            "id", "user_id", "session_id", "seat_number", "film_title", "cinema_name", "hall_name", "price"
+        )}
         data["purchased_at"] = _parse_dt(item.get("purchased_at")) or datetime.utcnow()
+        data["session_datetime"] = _parse_dt(item.get("session_datetime")) or datetime.utcnow()
+        if not all(data.get(k) for k in ("film_title", "cinema_name", "hall_name")):
+            session = (
+                db.query(models.Session)
+                .join(models.Film, models.Session.film_id == models.Film.id)
+                .join(models.Hall, models.Session.hall_id == models.Hall.id)
+                .join(models.Cinema, models.Hall.cinema_id == models.Cinema.id)
+                .filter(models.Session.id == data.get("session_id"))
+                .first()
+            )
+            if session:
+                data["film_title"] = data.get("film_title") or session.film.title
+                data["cinema_name"] = data.get("cinema_name") or session.hall.cinema.name
+                data["hall_name"] = data.get("hall_name") or session.hall.name
+                data["session_datetime"] = data.get("session_datetime") or session.datetime
+                data["price"] = data.get("price") if data.get("price") is not None else session.price
+        data["film_title"] = data.get("film_title") or "Удаленный фильм"
+        data["cinema_name"] = data.get("cinema_name") or "Удаленный кинотеатр"
+        data["hall_name"] = data.get("hall_name") or "Удаленный зал"
+        data["price"] = data.get("price") if data.get("price") is not None else 0
         db.add(models.Ticket(**data))
     for item in payload.get("promo_redemptions", []):
         data = {k: item.get(k) for k in ("id", "user_id", "promo_code_id")}

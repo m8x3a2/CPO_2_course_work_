@@ -1,16 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+
 from database import get_db
-import models, schemas, auth
+import auth, models, schemas
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post("/register", response_model=schemas.UserOut, status_code=201)
 def register(data: schemas.UserRegister, db: Session = Depends(get_db)):
-    if db.query(models.User).filter(models.User.username == data.username).first():
-        raise HTTPException(status_code=400, detail="Пользователь с таким именем уже существует")
     if db.query(models.User).filter(models.User.email == data.email).first():
         raise HTTPException(status_code=400, detail="Email уже используется")
 
@@ -28,11 +27,11 @@ def register(data: schemas.UserRegister, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=schemas.TokenOut)
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.username == form.username).first()
+    user = db.query(models.User).filter(models.User.email == form.username).first()
     if not user or not auth.verify_password(form.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
+        raise HTTPException(status_code=401, detail="Неверный email или пароль")
 
-    token = auth.create_access_token({"sub": user.username})
+    token = auth.create_access_token({"sub": user.email})
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -51,10 +50,27 @@ def update_user_role(
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
+    if user.id == current_user.id and data.role != models.UserRole.admin:
+        raise HTTPException(status_code=400, detail="Нельзя снять роль администратора с самого себя")
     user.role = data.role
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.delete("/users/{user_id}", status_code=204)
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.require_admin),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Нельзя удалить самого себя")
+    db.delete(user)
+    db.commit()
 
 
 @router.get("/users", response_model=list[schemas.UserOut])
@@ -62,4 +78,4 @@ def list_users(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.require_admin),
 ):
-    return db.query(models.User).all()
+    return db.query(models.User).order_by(models.User.id).all()

@@ -1,17 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { filmsApi, resolveImageSrc } from '../api/index'
+import { filmsApi, resolveEntityImageSrc, resolveImageSrc, uploadImage, usePlaceholderOnError } from '../api/index'
 import { useAuth } from '../AuthContext'
 
 const EMPTY_FILM = { title: '', director: '', operator: '', genre: '', studio: '', actors: '', description: '', year: '', duration_minutes: '', image_data: '' }
 
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+function validateImage(file) {
+  if (!['image/png', 'image/jpeg'].includes(file.type)) throw new Error('Можно загрузить только PNG или JPG')
+  if (file.size > 10 * 1024 * 1024) throw new Error('Размер изображения не должен превышать 10 МБ')
 }
 
 // Search by multiple genres (split by comma/space)
@@ -114,7 +110,7 @@ export default function FilmsPage() {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Удалить фильм?')) return
+    if (!confirm('Удалить фильм? Связанные сеансы будут удалены. Билеты останутся в архиве пользователей без изменений.')) return
     try {
       await filmsApi.delete(id)
       load(filters)
@@ -151,15 +147,25 @@ export default function FilmsPage() {
             <div className="form-group"><label>Описание</label><textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
             <div className="form-group">
               <label>Картинка</label>
-              <input type="file" accept="image/*" onChange={async e => {
+              <input type="file" accept="image/png,image/jpeg" onChange={async e => {
                 const file = e.target.files?.[0]
                 if (file) {
-                  const imageData = await fileToDataUrl(file)
-                  setForm(f => ({ ...f, image_data: imageData }))
+                  try {
+                    validateImage(file)
+                    const { path } = await uploadImage(file, 'films')
+                    setForm(f => ({ ...f, image_data: path }))
+                  } catch (err) {
+                    setFormError(err.message)
+                  }
                 }
               }} />
             </div>
-            {form.image_data && <img className="entity-image" src={resolveImageSrc(form.image_data)} alt="" />}
+            <img
+              className="entity-image"
+              src={resolveEntityImageSrc('film', form.image_data)}
+              onError={usePlaceholderOnError('film')}
+              alt=""
+            />
             <div className="flex-gap">
               <button type="submit">{editFilm ? 'Сохранить' : 'Создать'}</button>
               <button type="button" className="btn-outline" onClick={() => setShowForm(false)}>Отмена</button>
@@ -201,7 +207,12 @@ export default function FilmsPage() {
                 <tr key={f.id}>
                   <td>
                     <div className="entity-list-title">
-                      {f.image_data && <img className="entity-thumb" src={resolveImageSrc(f.image_data)} alt="" />}
+                      <img
+                        className="entity-thumb"
+                        src={resolveEntityImageSrc('film', f.image_data)}
+                        onError={usePlaceholderOnError('film')}
+                        alt=""
+                      />
                       <Link to={`/films/${f.id}`}>{f.title}</Link>
                     </div>
                   </td>

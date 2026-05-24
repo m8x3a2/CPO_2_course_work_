@@ -5,19 +5,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from database import get_db
+from archive import backfill_ticket_archive_fields
 import auth, models, schemas
 
 router = APIRouter(prefix="/tickets", tags=["Tickets"])
-
-
-def _ticket_query(db: Session):
-    return (
-        db.query(models.Ticket)
-        .options(
-            joinedload(models.Ticket.session).joinedload(models.Session.film),
-            joinedload(models.Ticket.session).joinedload(models.Session.hall),
-        )
-    )
 
 
 @router.post("/{session_id}", response_model=schemas.TicketOut, status_code=201)
@@ -29,7 +20,10 @@ def buy_ticket(
 ):
     session = (
         db.query(models.Session)
-        .options(joinedload(models.Session.hall))
+        .options(
+            joinedload(models.Session.film),
+            joinedload(models.Session.hall).joinedload(models.Hall.cinema),
+        )
         .filter(models.Session.id == session_id)
         .first()
     )
@@ -38,7 +32,7 @@ def buy_ticket(
     if session.free_seats <= 0:
         raise HTTPException(status_code=400, detail="Свободных мест нет")
     if session.status != "active":
-        raise HTTPException(status_code=400, detail="Сеанс недоступен для бронирования")
+        raise HTTPException(status_code=400, detail="Сеанс недоступен для покупки")
     if data.seat_number > session.hall.total_seats:
         raise HTTPException(status_code=400, detail="Такого места в зале нет")
     if float(current_user.balance or 0) < session.price:
@@ -54,6 +48,11 @@ def buy_ticket(
         session_id=session_id,
         purchased_at=datetime.utcnow(),
         seat_number=data.seat_number,
+        film_title=session.film.title,
+        cinema_name=session.hall.cinema.name,
+        hall_name=session.hall.name,
+        session_datetime=session.datetime,
+        price=session.price,
     )
     session.free_seats -= 1
     current_user.balance = float(current_user.balance or 0) - session.price
@@ -64,8 +63,7 @@ def buy_ticket(
         db.rollback()
         raise HTTPException(status_code=400, detail="Это место уже занято")
     db.refresh(ticket)
-
-    return _ticket_query(db).filter(models.Ticket.id == ticket.id).first()
+    return ticket
 
 
 @router.get("/my", response_model=list[schemas.TicketOut])
@@ -73,8 +71,10 @@ def my_tickets(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
+    backfill_ticket_archive_fields(db)
+    db.commit()
     return (
-        _ticket_query(db)
+        db.query(models.Ticket)
         .filter(models.Ticket.user_id == current_user.id)
         .order_by(models.Ticket.purchased_at.desc())
         .all()

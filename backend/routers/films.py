@@ -1,9 +1,12 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import Optional
+
 from database import get_db
+from archive import backfill_ticket_archive_fields
 from image_storage import delete_saved_image, save_image_data
-import models, schemas, auth
+import auth, models, schemas
 
 router = APIRouter(prefix="/films", tags=["Films"])
 
@@ -45,6 +48,8 @@ def create_film(
     db: Session = Depends(get_db),
     _: models.User = Depends(auth.require_admin),
 ):
+    if db.query(models.Film).filter(models.Film.title.ilike(data.title)).first():
+        raise HTTPException(status_code=400, detail="Фильм с таким названием уже существует")
     payload = data.model_dump()
     try:
         payload["image_data"] = save_image_data(payload.get("image_data"), "films")
@@ -67,6 +72,13 @@ def update_film(
     film = db.query(models.Film).filter(models.Film.id == film_id).first()
     if not film:
         raise HTTPException(status_code=404, detail="Фильм не найден")
+    existing = (
+        db.query(models.Film)
+        .filter(models.Film.id != film_id, models.Film.title.ilike(data.title))
+        .first()
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Фильм с таким названием уже существует")
     payload = data.model_dump()
     try:
         payload["image_data"] = save_image_data(payload.get("image_data"), "films")
@@ -90,6 +102,7 @@ def delete_film(
     film = db.query(models.Film).filter(models.Film.id == film_id).first()
     if not film:
         raise HTTPException(status_code=404, detail="Фильм не найден")
+    backfill_ticket_archive_fields(db, [session.id for session in film.sessions])
     delete_saved_image(film.image_data)
     db.delete(film)
     db.commit()

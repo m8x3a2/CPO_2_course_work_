@@ -1,33 +1,46 @@
-from pydantic import BaseModel, field_validator, model_validator, EmailStr
-from typing import Optional, List
 from datetime import datetime
+from typing import List, Optional
+import re
+
+from pydantic import BaseModel, EmailStr, field_validator
+
 from models import UserRole
 
 
-# ── Auth ────────────────────────────────────────────────────────────────────
+LOGIN_RE = re.compile(r"^[A-Za-z0-9]{5,30}$")
+PASSWORD_RE = re.compile(r"^[A-Za-z0-9]{8,30}$")
+EMAIL_ALLOWED_RE = re.compile(r"^[A-Za-z0-9@._-]{8,30}$")
+
 
 class UserRegister(BaseModel):
     username: str
     email: EmailStr
     password: str
 
-    @field_validator("username", "password")
+    @field_validator("username", "password", "email", mode="before")
     @classmethod
-    def strip_strings(cls, v: str) -> str:
-        return v.strip()
+    def strip_strings(cls, v):
+        return v.strip() if isinstance(v, str) else v
 
     @field_validator("username")
     @classmethod
-    def username_length(cls, v: str) -> str:
-        if len(v) < 3:
-            raise ValueError("Имя пользователя должно содержать минимум 3 символа")
+    def validate_username(cls, v: str) -> str:
+        if not LOGIN_RE.fullmatch(v):
+            raise ValueError("Логин: 5-30 символов, только A-Z, a-z, 0-9")
         return v
 
     @field_validator("password")
     @classmethod
-    def password_length(cls, v: str) -> str:
-        if len(v) < 6:
-            raise ValueError("Пароль должен содержать минимум 6 символов")
+    def validate_password(cls, v: str) -> str:
+        if not PASSWORD_RE.fullmatch(v):
+            raise ValueError("Пароль: 8-30 символов, только A-Z, a-z, 0-9")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def validate_email_length_and_chars(cls, v: str) -> str:
+        if not EMAIL_ALLOWED_RE.fullmatch(v):
+            raise ValueError("Email: 8-30 символов, английские буквы, цифры и символы @ . _ -")
         return v
 
 
@@ -50,8 +63,6 @@ class UserRoleUpdate(BaseModel):
     role: UserRole
 
 
-# ── Cinema ───────────────────────────────────────────────────────────────────
-
 class CinemaIn(BaseModel):
     name: str
     address: str
@@ -61,8 +72,13 @@ class CinemaIn(BaseModel):
 
     @field_validator("name", "address")
     @classmethod
-    def strip_strings(cls, v: str) -> str:
+    def strip_required(cls, v: str) -> str:
         return v.strip()
+
+    @field_validator("description", "image_data", mode="before")
+    @classmethod
+    def strip_optional(cls, v):
+        return v.strip() if isinstance(v, str) else v
 
     @field_validator("halls_count")
     @classmethod
@@ -92,8 +108,6 @@ class CinemaOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ── Hall ─────────────────────────────────────────────────────────────────────
-
 class HallIn(BaseModel):
     cinema_id: int
     name: str
@@ -101,18 +115,16 @@ class HallIn(BaseModel):
 
     @field_validator("name")
     @classmethod
-    def strip_strings(cls, v: str) -> str:
+    def strip_name(cls, v: str) -> str:
         return v.strip()
 
     @field_validator("total_seats")
     @classmethod
     def positive_seats(cls, v: int) -> int:
         if v < 1:
-            raise ValueError("Мест должно быть больше 0")
+            raise ValueError("Количество мест должно быть больше 0")
         return v
 
-
-# ── Film ─────────────────────────────────────────────────────────────────────
 
 class FilmIn(BaseModel):
     title: str
@@ -134,9 +146,7 @@ class FilmIn(BaseModel):
     @field_validator("operator", "studio", "actors", "description", "image_data", mode="before")
     @classmethod
     def strip_optional(cls, v):
-        if v is not None:
-            return v.strip()
-        return v
+        return v.strip() if isinstance(v, str) else v
 
 
 class FilmOut(BaseModel):
@@ -154,8 +164,6 @@ class FilmOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
-
-# ── Session ───────────────────────────────────────────────────────────────────
 
 class SessionIn(BaseModel):
     film_id: int
@@ -177,6 +185,13 @@ class SessionIn(BaseModel):
     def non_negative_seats(cls, v: int) -> int:
         if v < 0:
             raise ValueError("Количество мест не может быть отрицательным")
+        return v
+
+    @field_validator("status")
+    @classmethod
+    def valid_status(cls, v: str) -> str:
+        if v not in ("active", "cancelled", "finished"):
+            raise ValueError("Недопустимый статус")
         return v
 
 
@@ -208,14 +223,16 @@ class SessionWithCinema(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ── Ticket ────────────────────────────────────────────────────────────────────
-
 class TicketOut(BaseModel):
     id: int
     session_id: int
     purchased_at: datetime
     seat_number: Optional[int]
-    session: SessionOut
+    film_title: str
+    cinema_name: str
+    hall_name: str
+    session_datetime: datetime
+    price: float
 
     model_config = {"from_attributes": True}
 
@@ -255,7 +272,7 @@ class PromoCodeIn(BaseModel):
     @classmethod
     def positive_uses(cls, v: int) -> int:
         if v < 1:
-            raise ValueError("Количество людей должно быть больше 0")
+            raise ValueError("Количество использований должно быть больше 0")
         return v
 
     @field_validator("amount")

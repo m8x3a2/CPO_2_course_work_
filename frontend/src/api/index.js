@@ -6,15 +6,45 @@ export function resolveImageSrc(value) {
   return value
 }
 
+export function resolveEntityImageSrc(type, value) {
+  if (value) return resolveImageSrc(value)
+  return placeholderImageSrc(type)
+}
+
+export function placeholderImageSrc(type) {
+  if (type === 'cinema') return `${BASE}/uploads/Placeholder/cinemas.png`
+  if (type === 'film') return `${BASE}/uploads/Placeholder/films.png`
+  return ''
+}
+
+export function usePlaceholderOnError(type) {
+  return (event) => {
+    const fallback = placeholderImageSrc(type)
+    if (fallback && event.currentTarget.src !== fallback) {
+      event.currentTarget.src = fallback
+    }
+  }
+}
+
 function getToken() {
   return localStorage.getItem('token')
+}
+
+function formatErrorDetail(detail) {
+  if (Array.isArray(detail)) {
+    return detail.map(item => item.msg || item.message || JSON.stringify(item)).join('\n')
+  }
+  if (detail && typeof detail === 'object') {
+    return detail.msg || detail.message || JSON.stringify(detail)
+  }
+  return detail || 'Ошибка запроса'
 }
 
 async function request(method, path, body = null, auth = true) {
   const headers = { 'Content-Type': 'application/json' }
   if (auth) {
     const token = getToken()
-    if (token) headers['Authorization'] = `Bearer ${token}`
+    if (token) headers.Authorization = `Bearer ${token}`
   }
   const res = await fetch(`${BASE}${path}`, {
     method,
@@ -23,13 +53,28 @@ async function request(method, path, body = null, auth = true) {
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Ошибка сервера' }))
-    throw new Error(err.detail || 'Ошибка запроса')
+    throw new Error(formatErrorDetail(err.detail))
   }
   if (res.status === 204) return null
   return res.json()
 }
 
-// Auth
+export async function uploadImage(file, category) {
+  const form = new FormData()
+  form.append('file', file)
+  const token = getToken()
+  const res = await fetch(`${BASE}/images/upload?category=${encodeURIComponent(category)}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Ошибка загрузки изображения' }))
+    throw new Error(formatErrorDetail(err.detail))
+  }
+  return res.json()
+}
+
 export const authApi = {
   register: (data) => request('POST', '/auth/register', data, false),
   login: async (username, password) => {
@@ -41,13 +86,14 @@ export const authApi = {
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      throw new Error(err.detail || 'Ошибка входа')
+      throw new Error(formatErrorDetail(err.detail || 'Ошибка входа'))
     }
     return res.json()
   },
   me: () => request('GET', '/auth/me'),
   listUsers: () => request('GET', '/auth/users'),
   updateRole: (id, role) => request('PATCH', `/auth/users/${id}/role`, { role }),
+  deleteUser: (id) => request('DELETE', `/auth/users/${id}`),
 }
 
 export const promocodesApi = {
@@ -62,7 +108,6 @@ export const adminDataApi = {
   import: (data) => request('POST', '/admin/data/import', data),
 }
 
-// Cinemas
 export const cinemasApi = {
   list: (params = {}) => {
     const q = new URLSearchParams(params).toString()
@@ -74,7 +119,6 @@ export const cinemasApi = {
   delete: (id) => request('DELETE', `/cinemas/${id}`),
 }
 
-// Films
 export const filmsApi = {
   list: (params = {}) => {
     const q = new URLSearchParams(
@@ -88,7 +132,6 @@ export const filmsApi = {
   delete: (id) => request('DELETE', `/films/${id}`),
 }
 
-// Sessions
 export const sessionsApi = {
   list: (params = {}) => {
     const q = new URLSearchParams(
@@ -104,7 +147,6 @@ export const sessionsApi = {
   delete: (id) => request('DELETE', `/sessions/${id}`),
 }
 
-// Tickets
 export const ticketsApi = {
   buy: (sessionId, seatNumber) => request('POST', `/tickets/${sessionId}`, { seat_number: seatNumber }),
   myTickets: () => request('GET', '/tickets/my'),
@@ -112,7 +154,6 @@ export const ticketsApi = {
   deleteAllTickets: () => request('DELETE', '/tickets/my/all'),
 }
 
-// Halls
 export const hallsApi = {
   byCinema: (cinemaId) => request('GET', `/halls/cinema/${cinemaId}`, null, false),
   create: (data) => request('POST', '/halls', data),

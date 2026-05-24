@@ -2,6 +2,7 @@
 from sqlalchemy.orm import Session
 from typing import Optional
 from database import get_db
+from archive import backfill_ticket_archive_fields
 from image_storage import delete_saved_image, save_image_data
 import models, schemas, auth
 
@@ -26,7 +27,7 @@ def list_cinemas(
 def get_cinema(cinema_id: int, db: Session = Depends(get_db)):
     cinema = db.query(models.Cinema).filter(models.Cinema.id == cinema_id).first()
     if not cinema:
-        raise HTTPException(status_code=404, detail="РљРёРЅРѕС‚РµР°С‚СЂ РЅРµ РЅР°Р№РґРµРЅ")
+        raise HTTPException(status_code=404, detail="Кинотеатр не найден")
     return cinema
 
 
@@ -38,7 +39,7 @@ def create_cinema(
 ):
     existing = db.query(models.Cinema).filter(models.Cinema.name.ilike(data.name)).first()
     if existing:
-        raise HTTPException(status_code=400, detail="РљРёРЅРѕС‚РµР°С‚СЂ СЃ С‚Р°РєРёРј РЅР°Р·РІР°РЅРёРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚")
+        raise HTTPException(status_code=400, detail="Кинотеатр с таким названием уже существует")
 
     try:
         image_data = save_image_data(data.image_data, "cinemas")
@@ -68,14 +69,14 @@ def update_cinema(
 ):
     cinema = db.query(models.Cinema).filter(models.Cinema.id == cinema_id).first()
     if not cinema:
-        raise HTTPException(status_code=404, detail="РљРёРЅРѕС‚РµР°С‚СЂ РЅРµ РЅР°Р№РґРµРЅ")
+        raise HTTPException(status_code=404, detail="Кинотеатр не найден")
     existing = (
         db.query(models.Cinema)
         .filter(models.Cinema.id != cinema_id, models.Cinema.name.ilike(data.name))
         .first()
     )
     if existing:
-        raise HTTPException(status_code=400, detail="РљРёРЅРѕС‚РµР°С‚СЂ СЃ С‚Р°РєРёРј РЅР°Р·РІР°РЅРёРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚")
+        raise HTTPException(status_code=400, detail="Кинотеатр с таким названием уже существует")
     try:
         image_data = save_image_data(data.image_data, "cinemas")
     except ValueError as exc:
@@ -100,7 +101,9 @@ def delete_cinema(
 ):
     cinema = db.query(models.Cinema).filter(models.Cinema.id == cinema_id).first()
     if not cinema:
-        raise HTTPException(status_code=404, detail="РљРёРЅРѕС‚РµР°С‚СЂ РЅРµ РЅР°Р№РґРµРЅ")
+        raise HTTPException(status_code=404, detail="Кинотеатр не найден")
+    session_ids = [session.id for hall in cinema.halls for session in hall.sessions]
+    backfill_ticket_archive_fields(db, session_ids)
     delete_saved_image(cinema.image_data)
     db.delete(cinema)
     db.commit()
