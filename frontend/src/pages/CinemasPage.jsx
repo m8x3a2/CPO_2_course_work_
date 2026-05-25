@@ -9,6 +9,8 @@ function validateImage(file) {
 }
 
 const EMPTY_CINEMA = { name: '', address: '', description: '', image_data: '' }
+const TEXT_MAX_LENGTH = 100
+const DESCRIPTION_MAX_LENGTH = 500
 
 export default function CinemasPage() {
   const { user } = useAuth()
@@ -88,15 +90,15 @@ export default function CinemasPage() {
           <form onSubmit={handleCreate}>
             <div className="form-group">
               <label>Название</label>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+              <input value={form.name} maxLength={TEXT_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
             </div>
             <div className="form-group">
               <label>Адрес</label>
-              <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} required />
+              <input value={form.address} maxLength={TEXT_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} required />
             </div>
             <div className="form-group">
               <label>Описание и ссылки</label>
-              <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+              <textarea className="description-input" value={form.description} maxLength={DESCRIPTION_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
             </div>
             <div className="form-group">
               <label>Картинка</label>
@@ -129,11 +131,11 @@ export default function CinemasPage() {
       <form className="filters" onSubmit={handleSearch}>
         <div className="filter-field">
           <label>Название</label>
-          <input placeholder="Поиск..." value={filters.name} onChange={e => setFilters(f => ({ ...f, name: e.target.value }))} />
+          <input placeholder="Поиск..." value={filters.name} maxLength={TEXT_MAX_LENGTH} onChange={e => setFilters(f => ({ ...f, name: e.target.value }))} />
         </div>
         <div className="filter-field">
           <label>Адрес</label>
-          <input placeholder="Улица..." value={filters.address} onChange={e => setFilters(f => ({ ...f, address: e.target.value }))} />
+          <input placeholder="Улица..." value={filters.address} maxLength={TEXT_MAX_LENGTH} onChange={e => setFilters(f => ({ ...f, address: e.target.value }))} />
         </div>
         <button type="submit">Найти</button>
         <button type="button" className="btn-outline" onClick={resetFilters}>Сбросить</button>
@@ -188,15 +190,15 @@ function CinemaCard({ cinema, isAdmin, onDelete, onEdit }) {
         <form onSubmit={handleUpdate}>
           <div className="form-group">
             <label>Название</label>
-            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+            <input value={form.name} maxLength={TEXT_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
           </div>
           <div className="form-group">
             <label>Адрес</label>
-            <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} required />
+            <input value={form.address} maxLength={TEXT_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} required />
           </div>
           <div className="form-group">
             <label>Описание и ссылки</label>
-            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+            <textarea className="description-input" value={form.description} maxLength={DESCRIPTION_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
           </div>
           <div className="form-group">
             <label>Картинка</label>
@@ -236,8 +238,8 @@ function CinemaCard({ cinema, isAdmin, onDelete, onEdit }) {
         onError={usePlaceholderOnError('cinema')}
         alt={cinema.name}
       />
-      <div className="flex-between">
-        <Link to={`/cinemas/${cinema.id}`} style={{ fontWeight: 600, fontSize: 16 }}>{cinema.name}</Link>
+      <div className="flex-between entity-title-row">
+        <Link className="truncate" to={`/cinemas/${cinema.id}`} style={{ fontWeight: 600, fontSize: 16 }}>{cinema.name}</Link>
         {isAdmin && (
           <div className="flex-gap">
             <button className="btn-outline btn-sm" onClick={() => setEditing(true)}>Ред.</button>
@@ -245,9 +247,9 @@ function CinemaCard({ cinema, isAdmin, onDelete, onEdit }) {
           </div>
         )}
       </div>
-      <p className="text-muted text-sm mt-8">{cinema.address}</p>
+      <p className="text-muted text-sm mt-8 text-wrap">{cinema.address}</p>
       <p className="text-sm mt-8">Залов: <strong>{cinema.halls?.length ?? cinema.halls_count}</strong></p>
-      {cinema.description && <p className="text-sm mt-8" style={{ whiteSpace: 'pre-wrap' }}>{cinema.description}</p>}
+      {cinema.description && <p className="description-text text-sm mt-8">{cinema.description}</p>}
       <div className="mt-8">
         {cinema.halls?.map(h => (
           <span key={h.id} className="text-sm text-muted" style={{ marginRight: 8 }}>

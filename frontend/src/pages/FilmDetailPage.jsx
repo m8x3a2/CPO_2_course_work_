@@ -33,7 +33,7 @@ export default function FilmDetailPage() {
   return (
     <div>
       <Link to="/films" className="text-muted text-sm">← Все фильмы</Link>
-      <h1 className="page-title mt-8">{film.title}</h1>
+      <h1 className="page-title mt-8 text-wrap">{film.title}</h1>
       <div className="entity-hero-container">
         <img
           className="entity-hero-image-contain"
@@ -46,17 +46,17 @@ export default function FilmDetailPage() {
       <div className="card mt-16">
         <table>
           <tbody>
-            <tr><td style={{ width: 140, color: 'var(--muted)', fontWeight: 500 }}>Жанр</td><td>{film.genre}</td></tr>
-            <tr><td style={{ color: 'var(--muted)', fontWeight: 500 }}>Режиссёр</td><td>{film.director}</td></tr>
-            {film.operator && <tr><td style={{ color: 'var(--muted)', fontWeight: 500 }}>Оператор</td><td>{film.operator}</td></tr>}
-            {film.studio && <tr><td style={{ color: 'var(--muted)', fontWeight: 500 }}>Студия</td><td>{film.studio}</td></tr>}
+            <tr><td style={{ width: 140, color: 'var(--muted)', fontWeight: 500 }}>Жанр</td><td className="text-wrap">{film.genre}</td></tr>
+            <tr><td style={{ color: 'var(--muted)', fontWeight: 500 }}>Режиссёр</td><td className="text-wrap">{film.director}</td></tr>
+            {film.operator && <tr><td style={{ color: 'var(--muted)', fontWeight: 500 }}>Оператор</td><td className="text-wrap">{film.operator}</td></tr>}
+            {film.studio && <tr><td style={{ color: 'var(--muted)', fontWeight: 500 }}>Студия</td><td className="text-wrap">{film.studio}</td></tr>}
             {film.year && <tr><td style={{ color: 'var(--muted)', fontWeight: 500 }}>Год</td><td>{film.year}</td></tr>}
             {film.duration_minutes && <tr><td style={{ color: 'var(--muted)', fontWeight: 500 }}>Длительность</td><td>{fmtDuration(film.duration_minutes)}</td></tr>}
-            {film.actors && <tr><td style={{ color: 'var(--muted)', fontWeight: 500 }}>Актёры</td><td>{film.actors}</td></tr>}
+            {film.actors && <tr><td style={{ color: 'var(--muted)', fontWeight: 500 }}>Актёры</td><td className="text-wrap">{film.actors}</td></tr>}
           </tbody>
         </table>
         {film.description && (
-          <p style={{ marginTop: 12, fontSize: 14 }}>{film.description}</p>
+          <p className="description-text" style={{ marginTop: 12, fontSize: 14 }}>{film.description}</p>
         )}
       </div>
 

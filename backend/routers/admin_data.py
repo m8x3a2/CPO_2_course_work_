@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from database import get_db
+from database import get_db, sync_serial_sequences
 from image_storage import save_image_data
 import auth, models
 
@@ -200,4 +200,5 @@ def import_data(
         db.add(models.PromoRedemption(**data))
 
     db.commit()
+    sync_serial_sequences()
     return {"status": "ok"}

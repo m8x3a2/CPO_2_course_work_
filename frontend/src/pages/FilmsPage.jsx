@@ -4,6 +4,8 @@ import { filmsApi, resolveEntityImageSrc, resolveImageSrc, uploadImage, usePlace
 import { useAuth } from '../AuthContext'
 
 const EMPTY_FILM = { title: '', director: '', operator: '', genre: '', studio: '', actors: '', description: '', year: '', duration_minutes: '', image_data: '' }
+const TEXT_MAX_LENGTH = 100
+const DESCRIPTION_MAX_LENGTH = 500
 
 function validateImage(file) {
   if (!['image/png', 'image/jpeg'].includes(file.type)) throw new Error('Можно загрузить только PNG или JPG')
@@ -132,19 +134,19 @@ export default function FilmsPage() {
           {formError && <div className="alert alert-error">{formError}</div>}
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-              <div className="form-group"><label>Название *</label><input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required /></div>
-              <div className="form-group"><label>Жанр * (через запятую)</label><input value={form.genre} onChange={e => setForm(f => ({ ...f, genre: e.target.value }))} required /></div>
-              <div className="form-group"><label>Режиссёр *</label><input value={form.director} onChange={e => setForm(f => ({ ...f, director: e.target.value }))} required /></div>
-              <div className="form-group"><label>Оператор</label><input value={form.operator} onChange={e => setForm(f => ({ ...f, operator: e.target.value }))} /></div>
-              <div className="form-group"><label>Студия</label><input value={form.studio} onChange={e => setForm(f => ({ ...f, studio: e.target.value }))} /></div>
+              <div className="form-group"><label>Название *</label><input value={form.title} maxLength={TEXT_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required /></div>
+              <div className="form-group"><label>Жанр * (через запятую)</label><input value={form.genre} maxLength={TEXT_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, genre: e.target.value }))} required /></div>
+              <div className="form-group"><label>Режиссёр *</label><input value={form.director} maxLength={TEXT_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, director: e.target.value }))} required /></div>
+              <div className="form-group"><label>Оператор</label><input value={form.operator} maxLength={TEXT_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, operator: e.target.value }))} /></div>
+              <div className="form-group"><label>Студия</label><input value={form.studio} maxLength={TEXT_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, studio: e.target.value }))} /></div>
               <div className="form-group"><label>Год</label><input type="number" min="1888" max="2100" value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))} /></div>
               <div className="form-group">
                 <label>Продолжительность (минут)</label>
                 <input type="number" min="1" max="600" value={form.duration_minutes} onChange={e => setForm(f => ({ ...f, duration_minutes: e.target.value }))} placeholder="напр. 120" />
               </div>
             </div>
-            <div className="form-group"><label>Актёры (через запятую)</label><input value={form.actors} onChange={e => setForm(f => ({ ...f, actors: e.target.value }))} /></div>
-            <div className="form-group"><label>Описание</label><textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
+            <div className="form-group"><label>Актёры (через запятую)</label><input value={form.actors} maxLength={TEXT_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, actors: e.target.value }))} /></div>
+            <div className="form-group"><label>Описание</label><textarea className="description-input" value={form.description} maxLength={DESCRIPTION_MAX_LENGTH} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
             <div className="form-group">
               <label>Картинка</label>
               <input type="file" accept="image/png,image/jpeg" onChange={async e => {
@@ -175,10 +177,10 @@ export default function FilmsPage() {
       )}
 
       <form className="filters" onSubmit={handleSearch}>
-        <div className="filter-field"><label>Название</label><input value={filters.title} onChange={e => setFilters(f => ({ ...f, title: e.target.value }))} /></div>
-        <div className="filter-field"><label>Режиссёр</label><input value={filters.director} onChange={e => setFilters(f => ({ ...f, director: e.target.value }))} /></div>
-        <div className="filter-field"><label>Жанр (через запятую)</label><input value={filters.genre} onChange={e => setFilters(f => ({ ...f, genre: e.target.value }))} placeholder="боевик, фантастика" /></div>
-        <div className="filter-field"><label>Студия</label><input value={filters.studio} onChange={e => setFilters(f => ({ ...f, studio: e.target.value }))} /></div>
+        <div className="filter-field"><label>Название</label><input value={filters.title} maxLength={TEXT_MAX_LENGTH} onChange={e => setFilters(f => ({ ...f, title: e.target.value }))} /></div>
+        <div className="filter-field"><label>Режиссёр</label><input value={filters.director} maxLength={TEXT_MAX_LENGTH} onChange={e => setFilters(f => ({ ...f, director: e.target.value }))} /></div>
+        <div className="filter-field"><label>Жанр (через запятую)</label><input value={filters.genre} maxLength={TEXT_MAX_LENGTH} onChange={e => setFilters(f => ({ ...f, genre: e.target.value }))} placeholder="боевик, фантастика" /></div>
+        <div className="filter-field"><label>Студия</label><input value={filters.studio} maxLength={TEXT_MAX_LENGTH} onChange={e => setFilters(f => ({ ...f, studio: e.target.value }))} /></div>
         <div className="filter-field"><label>Год</label><input type="number" value={filters.year} onChange={e => setFilters(f => ({ ...f, year: e.target.value }))} /></div>
         <button type="submit">Найти</button>
         <button type="button" className="btn-outline" onClick={resetFilters}>Сбросить</button>
@@ -213,7 +215,7 @@ export default function FilmsPage() {
                         onError={usePlaceholderOnError('film')}
                         alt=""
                       />
-                      <Link to={`/films/${f.id}`}>{f.title}</Link>
+                      <Link className="truncate" to={`/films/${f.id}`}>{f.title}</Link>
                     </div>
                   </td>
                   <td>{f.genre}</td>

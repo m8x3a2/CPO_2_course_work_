@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 import re
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from models import UserRole
 
@@ -10,6 +10,8 @@ from models import UserRole
 LOGIN_RE = re.compile(r"^[A-Za-z0-9]{5,30}$")
 PASSWORD_RE = re.compile(r"^[A-Za-z0-9]{8,30}$")
 EMAIL_ALLOWED_RE = re.compile(r"^[A-Za-z0-9@._-]{8,30}$")
+TEXT_FIELD_MAX_LENGTH = 100
+DESCRIPTION_MAX_LENGTH = 500
 
 
 class UserRegister(BaseModel):
@@ -64,16 +66,16 @@ class UserRoleUpdate(BaseModel):
 
 
 class CinemaIn(BaseModel):
-    name: str
-    address: str
+    name: str = Field(..., min_length=1, max_length=TEXT_FIELD_MAX_LENGTH)
+    address: str = Field(..., min_length=1, max_length=TEXT_FIELD_MAX_LENGTH)
     halls_count: int
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=DESCRIPTION_MAX_LENGTH)
     image_data: Optional[str] = None
 
-    @field_validator("name", "address")
+    @field_validator("name", "address", mode="before")
     @classmethod
     def strip_required(cls, v: str) -> str:
-        return v.strip()
+        return v.strip() if isinstance(v, str) else v
 
     @field_validator("description", "image_data", mode="before")
     @classmethod
@@ -110,13 +112,13 @@ class CinemaOut(BaseModel):
 
 class HallIn(BaseModel):
     cinema_id: int
-    name: str
+    name: str = Field(..., min_length=1, max_length=TEXT_FIELD_MAX_LENGTH)
     total_seats: int
 
-    @field_validator("name")
+    @field_validator("name", mode="before")
     @classmethod
     def strip_name(cls, v: str) -> str:
-        return v.strip()
+        return v.strip() if isinstance(v, str) else v
 
     @field_validator("total_seats")
     @classmethod
@@ -127,21 +129,21 @@ class HallIn(BaseModel):
 
 
 class FilmIn(BaseModel):
-    title: str
-    director: str
-    operator: Optional[str] = None
-    genre: str
-    studio: Optional[str] = None
-    actors: Optional[str] = None
-    description: Optional[str] = None
+    title: str = Field(..., min_length=1, max_length=TEXT_FIELD_MAX_LENGTH)
+    director: str = Field(..., min_length=1, max_length=TEXT_FIELD_MAX_LENGTH)
+    operator: Optional[str] = Field(None, max_length=TEXT_FIELD_MAX_LENGTH)
+    genre: str = Field(..., min_length=1, max_length=TEXT_FIELD_MAX_LENGTH)
+    studio: Optional[str] = Field(None, max_length=TEXT_FIELD_MAX_LENGTH)
+    actors: Optional[str] = Field(None, max_length=TEXT_FIELD_MAX_LENGTH)
+    description: Optional[str] = Field(None, max_length=DESCRIPTION_MAX_LENGTH)
     year: Optional[int] = None
     duration_minutes: Optional[int] = None
     image_data: Optional[str] = None
 
-    @field_validator("title", "director", "genre")
+    @field_validator("title", "director", "genre", mode="before")
     @classmethod
     def strip_required(cls, v: str) -> str:
-        return v.strip()
+        return v.strip() if isinstance(v, str) else v
 
     @field_validator("operator", "studio", "actors", "description", "image_data", mode="before")
     @classmethod

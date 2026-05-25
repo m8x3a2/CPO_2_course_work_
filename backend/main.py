@@ -5,7 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session as DbSession
 
 from archive import backfill_ticket_archive_fields
-from database import Base, engine
+from database import Base, engine, sync_serial_sequences
 from image_storage import UPLOAD_DIR, ensure_upload_dir, save_upload_bytes
 import models  # noqa: F401 - needed for table creation
 from routers import admin_data, auth, cinemas, films, halls, promocodes, sessions, tickets
@@ -48,6 +48,10 @@ def upgrade_schema():
         with DbSession(engine) as db:
             backfill_ticket_archive_fields(db)
             db.commit()
+    except Exception:
+        pass
+    try:
+        sync_serial_sequences()
     except Exception:
         pass
 

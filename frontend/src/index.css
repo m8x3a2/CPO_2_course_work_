@@ -95,6 +95,13 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--primary);
 }
 textarea { resize: vertical; min-height: 80px; }
+.description-input {
+  min-height: 100px;
+  max-height: 160px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .password-field { display: flex; gap: 8px; }
 .password-field input { flex: 1; min-width: 0; }
 .password-toggle {
@@ -140,7 +147,8 @@ textarea { resize: vertical; min-height: 80px; }
   border: 1px solid var(--border);
   margin: 8px 0 16px;
 }
-.entity-list-title { display: flex; align-items: center; gap: 10px; }
+.entity-list-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.entity-list-title a { min-width: 0; }
 .entity-thumb {
   width: 44px;
   height: 44px;
@@ -188,6 +196,8 @@ textarea { resize: vertical; min-height: 80px; }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Page titles */
@@ -196,7 +206,7 @@ textarea { resize: vertical; min-height: 80px; }
 
 /* Tables */
 table { width: 100%; border-collapse: collapse; }
-th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; overflow-wrap: anywhere; }
 th { background: var(--bg); font-weight: 600; color: var(--muted); font-size: 13px; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #fafafa; }
@@ -250,9 +260,31 @@ tr:hover td { background: #fafafa; }
 /* Misc */
 .text-muted { color: var(--muted); }
 .text-sm { font-size: 13px; }
+.text-wrap {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.description-text {
+  max-height: 150px;
+  overflow-y: auto;
+  padding-right: 4px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.truncate {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .flex { display: flex; }
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
 .flex-gap { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.entity-title-row { gap: 10px; }
+.entity-title-row .truncate { flex: 1; }
 .mt-8 { margin-top: 8px; }
 .mt-16 { margin-top: 16px; }
 .mt-24 { margin-top: 24px; }

@@ -5,6 +5,7 @@ import { useAuth } from '../AuthContext'
 import { fmtDateTime, fmtPrice } from '../utils'
 
 const STATUS_LABELS = { active: 'Активен', cancelled: 'Отменен', finished: 'Завершен' }
+const TEXT_MAX_LENGTH = 100
 
 export default function CinemaDetailPage() {
   const { id } = useParams()
@@ -64,7 +65,7 @@ export default function CinemaDetailPage() {
   return (
     <div>
       <Link to="/cinemas" className="text-muted text-sm">← Все кинотеатры</Link>
-      <h1 className="page-title mt-8">{cinema.name}</h1>
+      <h1 className="page-title mt-8 text-wrap">{cinema.name}</h1>
       <div className="entity-hero-container">
         <img
           className="entity-hero-image-contain"
@@ -73,8 +74,8 @@ export default function CinemaDetailPage() {
           alt={cinema.name}
         />
       </div>
-      <p className="text-muted">📍 {cinema.address}</p>
-      {cinema.description && <p className="text-sm mt-8" style={{ whiteSpace: 'pre-wrap' }}>{cinema.description}</p>}
+      <p className="text-muted text-wrap">📍 {cinema.address}</p>
+      {cinema.description && <p className="description-text text-sm mt-8">{cinema.description}</p>}
 
       <div className="mt-24">
         <div className="flex-between mb-16">
@@ -92,7 +93,7 @@ export default function CinemaDetailPage() {
             <form onSubmit={handleAddHall} style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
               <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
                 <label>Название зала</label>
-                <input value={hallForm.name} onChange={e => setHallForm(f => ({ ...f, name: e.target.value }))} required />
+                <input value={hallForm.name} maxLength={TEXT_MAX_LENGTH} onChange={e => setHallForm(f => ({ ...f, name: e.target.value }))} required />
               </div>
               <div className="form-group" style={{ marginBottom: 0, width: 120 }}>
                 <label>Мест</label>
