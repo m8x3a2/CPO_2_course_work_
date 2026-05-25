@@ -30,7 +30,7 @@ def upgrade_schema():
         "CREATE TABLE IF NOT EXISTS promo_redemptions (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), promo_code_id INTEGER NOT NULL REFERENCES promo_codes(id), redeemed_at TIMESTAMP NOT NULL)",
         "CREATE INDEX IF NOT EXISTS ix_promo_redemptions_id ON promo_redemptions (id)",
         "ALTER TABLE promo_redemptions ADD CONSTRAINT uq_promo_user_code UNIQUE (user_id, promo_code_id)",
-        "ALTER TABLE tickets ADD CONSTRAINT uq_ticket_session_seat UNIQUE (session_id, seat_number)",
+        "ALTER TABLE tickets DROP CONSTRAINT IF EXISTS uq_ticket_session_seat",
         "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS film_title VARCHAR(300)",
         "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS cinema_name VARCHAR(200)",
         "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS hall_name VARCHAR(100)",

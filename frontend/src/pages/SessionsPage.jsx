@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { authApi, sessionsApi, filmsApi, cinemasApi, ticketsApi } from '../api/index'
 import { useAuth } from '../AuthContext'
@@ -227,8 +227,9 @@ export default function SessionsPage() {
       ) : sessions.length === 0 ? (
         <div className="empty">Сеансов не найдено</div>
       ) : (
-        <div className="card">
-          <table>
+        <div className="card table-card sessions-card">
+          <div className="table-scroll">
+          <table className="responsive-table sessions-table">
             <thead>
               <tr>
                 <th>Фильм</th>
@@ -242,11 +243,11 @@ export default function SessionsPage() {
             </thead>
             <tbody>
               {sessions.map(s => (
-                <>
-                  <tr key={s.id}>
-                    <td><Link to={`/films/${s.film.id}`}>{s.film.title}</Link><br /><span className="text-muted text-sm">{s.film.genre}</span></td>
-                    <td>{s.cinema_name}<br /><span className="text-muted text-sm">{s.hall.name}</span></td>
-                    <td>{fmtDateTime(s.datetime)}</td>
+                <Fragment key={s.id}>
+                  <tr>
+                    <td><Link className="truncate" to={`/films/${s.film.id}`}>{s.film.title}</Link><br /><span className="text-muted text-sm text-wrap">{s.film.genre}</span></td>
+                    <td className="text-wrap">{s.cinema_name}<br /><span className="text-muted text-sm">{s.hall.name}</span></td>
+                    <td className="date-cell">{fmtDateTime(s.datetime)}</td>
                     <td>{fmtPrice(s.price)}</td>
                     <td>{s.free_seats}</td>
                     <td><span className={`badge badge-${s.status}`}>{STATUS_LABELS[s.status] || s.status}</span></td>
@@ -272,7 +273,7 @@ export default function SessionsPage() {
                               <option value="cancelled">Отменен</option>
                               <option value="finished">Завершен</option>
                             </select>
-                            <button className="btn-danger btn-sm" onClick={() => handleDelete(s.id)}>🗑</button>
+                            <button className="btn-danger btn-sm icon-btn" title="Удалить" aria-label="Удалить" onClick={() => handleDelete(s.id)}>🗑</button>
                           </>
                         )}
                       </div>
@@ -323,10 +324,11 @@ export default function SessionsPage() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

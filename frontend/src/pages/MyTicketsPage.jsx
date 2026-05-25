@@ -50,7 +50,7 @@ export default function MyTicketsPage() {
       <div className="flex-between mb-16">
         <h1 className="page-title" style={{ marginBottom: 0 }}>Мои билеты</h1>
         {tickets.length > 0 && (
-          <button className="btn-danger btn-sm" onClick={handleDeleteAll}>Удалить все билеты</button>
+          <button className="btn-danger btn-sm icon-btn" title="Удалить все билеты" aria-label="Удалить все билеты" onClick={handleDeleteAll}>🗑</button>
         )}
       </div>
       {error && <div className="alert alert-error">{error}</div>}
@@ -85,7 +85,7 @@ export default function MyTicketsPage() {
                   <td>{t.seat_number ?? '-'}</td>
                   <td className="text-muted text-sm">{fmtDateTime(t.purchased_at)}</td>
                   <td>
-                    <button className="btn-danger btn-sm" onClick={() => handleDelete(t.id)}>Удалить</button>
+                    <button className="btn-danger btn-sm icon-btn" title="Удалить" aria-label="Удалить" onClick={() => handleDelete(t.id)}>🗑</button>
                   </td>
                 </tr>
               ))}

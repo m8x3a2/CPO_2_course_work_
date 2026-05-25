@@ -192,8 +192,9 @@ export default function FilmsPage() {
       ) : films.length === 0 ? (
         <div className="empty">Фильмы не найдены</div>
       ) : (
-        <div className="card">
-          <table>
+        <div className="card table-card films-card">
+          <div className="table-scroll">
+          <table className="responsive-table films-table">
             <thead>
               <tr>
                 <th>Название</th>
@@ -218,15 +219,15 @@ export default function FilmsPage() {
                       <Link className="truncate" to={`/films/${f.id}`}>{f.title}</Link>
                     </div>
                   </td>
-                  <td>{f.genre}</td>
-                  <td>{f.director}</td>
-                  <td>{f.year || '—'}</td>
-                  <td>{f.duration_minutes ? fmtDuration(f.duration_minutes) : '—'}</td>
+                  <td className="text-wrap">{f.genre}</td>
+                  <td className="text-wrap">{f.director}</td>
+                  <td className="year-cell">{f.year || '—'}</td>
+                  <td className="duration-cell">{f.duration_minutes ? fmtDuration(f.duration_minutes) : '—'}</td>
                   {user?.role === 'admin' && (
                     <td>
                       <div className="flex-gap">
                         <button className="btn-outline btn-sm" onClick={() => openEdit(f)}>✏️</button>
-                        <button className="btn-danger btn-sm" onClick={() => handleDelete(f.id)}>🗑</button>
+                        <button className="btn-danger btn-sm icon-btn" title="Удалить" aria-label="Удалить" onClick={() => handleDelete(f.id)}>🗑</button>
                       </div>
                     </td>
                   )}
@@ -234,6 +235,7 @@ export default function FilmsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

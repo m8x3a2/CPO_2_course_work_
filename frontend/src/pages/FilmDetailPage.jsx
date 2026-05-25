@@ -65,8 +65,9 @@ export default function FilmDetailPage() {
         {sessions.length === 0 ? (
           <p className="text-muted text-sm">Сеансов нет</p>
         ) : (
-          <div className="card">
-            <table>
+          <div className="card table-card sessions-card">
+            <div className="table-scroll">
+            <table className="responsive-table sessions-table">
               <thead>
                 <tr><th>Кинотеатр</th><th>Зал</th><th>Дата и время</th><th>Цена</th><th>Мест</th></tr>
               </thead>
@@ -74,16 +75,17 @@ export default function FilmDetailPage() {
                 {sessions.map(s => (
                   <tr key={s.id}>
                     <td>
-                      <Link to={`/cinemas/${s.hall?.cinema_id ?? ''}`}>{s.cinema_name}</Link>
+                      <Link className="truncate" to={`/cinemas/${s.hall?.cinema_id ?? ''}`}>{s.cinema_name}</Link>
                     </td>
-                    <td>{s.hall.name}</td>
-                    <td>{fmtDateTime(s.datetime)}</td>
+                    <td className="text-wrap">{s.hall.name}</td>
+                    <td className="date-cell">{fmtDateTime(s.datetime)}</td>
                     <td>{fmtPrice(s.price)}</td>
                     <td>{s.free_seats}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

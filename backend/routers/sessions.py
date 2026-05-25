@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from database import get_db
 from archive import backfill_ticket_archive_fields
+from session_tickets import current_session_ticket_query, recalculate_free_seats
 import auth, models, schemas
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
@@ -69,12 +70,15 @@ def list_sessions(
         q = q.filter(models.Session.datetime >= datetime.combine(date_from, datetime.min.time()))
     if date_to:
         q = q.filter(models.Session.datetime <= datetime.combine(date_to, datetime.max.time()))
-    if has_seats is not None:
-        q = q.filter(models.Session.free_seats > 0 if has_seats else models.Session.free_seats == 0)
     if status:
         q = q.filter(models.Session.status == status)
 
     sessions = q.order_by(models.Session.datetime).all()
+    for session in sessions:
+        recalculate_free_seats(db, session)
+    if has_seats is not None:
+        sessions = [session for session in sessions if (session.free_seats > 0) == has_seats]
+    db.commit()
     return [_to_session_with_cinema(s) for s in sessions]
 
 
@@ -83,6 +87,8 @@ def get_session(session_id: int, db: Session = Depends(get_db)):
     s = _build_query(db).filter(models.Session.id == session_id).first()
     if not s:
         raise HTTPException(status_code=404, detail="Сеанс не найден")
+    recalculate_free_seats(db, s)
+    db.commit()
     return _to_session_with_cinema(s)
 
 
@@ -92,10 +98,13 @@ def get_session_seats(session_id: int, db: Session = Depends(get_db)):
     if not s:
         raise HTTPException(status_code=404, detail="Сеанс не найден")
     occupied = sorted(
-        seat for (seat,) in db.query(models.Ticket.seat_number)
-        .filter(models.Ticket.session_id == session_id, models.Ticket.seat_number.isnot(None))
+        seat for (seat,) in current_session_ticket_query(db, s)
+        .with_entities(models.Ticket.seat_number)
+        .filter(models.Ticket.seat_number.isnot(None))
         .all()
     )
+    recalculate_free_seats(db, s)
+    db.commit()
     occupied_set = set(occupied)
     free = [seat for seat in range(1, s.hall.total_seats + 1) if seat not in occupied_set]
     return {

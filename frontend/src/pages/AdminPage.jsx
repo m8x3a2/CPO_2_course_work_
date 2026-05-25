@@ -190,7 +190,7 @@ export default function AdminPage() {
                       <td><strong>{p.code}</strong></td>
                       <td>{p.amount}</td>
                       <td>{p.used_count} / {p.max_uses}</td>
-                      <td><button className="btn-danger btn-sm" onClick={() => handlePromoDelete(p.id)}>Удалить</button></td>
+                      <td><button className="btn-danger btn-sm icon-btn" title="Удалить" aria-label="Удалить" onClick={() => handlePromoDelete(p.id)}>🗑</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -234,7 +234,7 @@ export default function AdminPage() {
                       </td>
                       <td>
                         {u.id !== user.id && (
-                          <button className="btn-danger btn-sm" onClick={() => handleUserDelete(u.id)}>Удалить</button>
+                          <button className="btn-danger btn-sm icon-btn" title="Удалить" aria-label="Удалить" onClick={() => handleUserDelete(u.id)}>🗑</button>
                         )}
                       </td>
                     </tr>

@@ -85,7 +85,6 @@ class Session(Base):
 
 class Ticket(Base):
     __tablename__ = "tickets"
-    __table_args__ = (UniqueConstraint("session_id", "seat_number", name="uq_ticket_session_seat"),)
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

@@ -107,8 +107,9 @@ export default function CinemaDetailPage() {
         {cinema.halls.length === 0 ? (
           <p className="text-muted text-sm">Залы не добавлены</p>
         ) : (
-          <div className="card">
-            <table>
+          <div className="card table-card">
+            <div className="table-scroll">
+            <table className="responsive-table">
               <thead><tr><th>Название</th><th>Мест</th>{user?.role === 'admin' && <th></th>}</tr></thead>
               <tbody>
                 {cinema.halls.map(h => (
@@ -116,12 +117,13 @@ export default function CinemaDetailPage() {
                     <td>{h.name}</td>
                     <td>{h.total_seats}</td>
                     {user?.role === 'admin' && (
-                      <td><button className="btn-danger btn-sm" onClick={() => handleDeleteHall(h.id)}>Удалить</button></td>
+                      <td><button className="btn-danger btn-sm icon-btn" title="Удалить" aria-label="Удалить" onClick={() => handleDeleteHall(h.id)}>🗑</button></td>
                     )}
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>
@@ -131,17 +133,18 @@ export default function CinemaDetailPage() {
         {sessions.length === 0 ? (
           <p className="text-muted text-sm">Сеансов нет</p>
         ) : (
-          <div className="card">
-            <table>
+          <div className="card table-card sessions-card">
+            <div className="table-scroll">
+            <table className="responsive-table sessions-table">
               <thead>
                 <tr><th>Фильм</th><th>Зал</th><th>Дата и время</th><th>Цена</th><th>Мест</th><th>Статус</th></tr>
               </thead>
               <tbody>
                 {sessions.map(s => (
                   <tr key={s.id}>
-                    <td><Link to={`/films/${s.film.id}`}>{s.film.title}</Link></td>
-                    <td>{s.hall.name}</td>
-                    <td>{fmtDateTime(s.datetime)}</td>
+                    <td><Link className="truncate" to={`/films/${s.film.id}`}>{s.film.title}</Link></td>
+                    <td className="text-wrap">{s.hall.name}</td>
+                    <td className="date-cell">{fmtDateTime(s.datetime)}</td>
                     <td>{fmtPrice(s.price)}</td>
                     <td>{s.free_seats}</td>
                     <td><span className={`badge badge-${s.status}`}>{STATUS_LABELS[s.status] || s.status}</span></td>
@@ -149,6 +152,7 @@ export default function CinemaDetailPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

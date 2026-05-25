@@ -75,6 +75,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .btn-outline:hover { background: var(--bg); }
 .btn-sm { padding: 4px 10px; font-size: 13px; }
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex: 0 0 32px;
+}
 .btn-success { background: var(--success); }
 .btn-success:hover { background: #15803d; }
 
@@ -210,6 +216,57 @@ th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--bo
 th { background: var(--bg); font-weight: 600; color: var(--muted); font-size: 13px; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #fafafa; }
+.table-card { padding: 0; }
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+.table-card table th,
+.table-card table td {
+  padding: 10px 12px;
+}
+.responsive-table {
+  min-width: 720px;
+}
+.sessions-table {
+  table-layout: fixed;
+}
+.films-table {
+  table-layout: fixed;
+}
+.films-table th:nth-child(1),
+.films-table td:nth-child(1) { width: 34%; }
+.films-table th:nth-child(2),
+.films-table td:nth-child(2) { width: 20%; }
+.films-table th:nth-child(3),
+.films-table td:nth-child(3) { width: 20%; }
+.films-table th:nth-child(4),
+.films-table td:nth-child(4) { width: 78px; }
+.films-table th:nth-child(5),
+.films-table td:nth-child(5) { width: 92px; }
+.films-table th:nth-child(6),
+.films-table td:nth-child(6) { width: 88px; }
+.sessions-table th:nth-child(1),
+.sessions-table td:nth-child(1) { width: 24%; }
+.sessions-table th:nth-child(2),
+.sessions-table td:nth-child(2) { width: 23%; }
+.sessions-table th:nth-child(3),
+.sessions-table td:nth-child(3) { width: 150px; }
+.sessions-table th:nth-child(4),
+.sessions-table td:nth-child(4) { width: 100px; }
+.sessions-table th:nth-child(5),
+.sessions-table td:nth-child(5) { width: 70px; }
+.sessions-table th:nth-child(6),
+.sessions-table td:nth-child(6) { width: 110px; }
+.sessions-table th:nth-child(7),
+.sessions-table td:nth-child(7) { width: 190px; }
+.date-cell {
+  white-space: nowrap;
+}
+.year-cell,
+.duration-cell {
+  white-space: nowrap;
+}
 
 /* Alerts */
 .alert {

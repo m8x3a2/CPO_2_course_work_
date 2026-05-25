@@ -243,7 +243,7 @@ function CinemaCard({ cinema, isAdmin, onDelete, onEdit }) {
         {isAdmin && (
           <div className="flex-gap">
             <button className="btn-outline btn-sm" onClick={() => setEditing(true)}>Ред.</button>
-            <button className="btn-danger btn-sm" onClick={() => onDelete(cinema.id)}>Удалить</button>
+            <button className="btn-danger btn-sm icon-btn" title="Удалить" aria-label="Удалить" onClick={() => onDelete(cinema.id)}>🗑</button>
           </div>
         )}
       </div>

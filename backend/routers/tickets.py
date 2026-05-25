@@ -6,9 +6,29 @@ from sqlalchemy.orm import Session, joinedload
 
 from database import get_db
 from archive import backfill_ticket_archive_fields
+from session_tickets import current_session_ticket_query, recalculate_free_seats
 import auth, models, schemas
 
 router = APIRouter(prefix="/tickets", tags=["Tickets"])
+
+
+def _load_session(db: Session, session_id: int):
+    return (
+        db.query(models.Session)
+        .options(
+            joinedload(models.Session.film),
+            joinedload(models.Session.hall).joinedload(models.Hall.cinema),
+        )
+        .filter(models.Session.id == session_id)
+        .first()
+    )
+
+
+def _recalculate_sessions(db: Session, session_ids):
+    for session_id in set(session_ids):
+        session = _load_session(db, session_id)
+        if session:
+            recalculate_free_seats(db, session)
 
 
 @router.post("/{session_id}", response_model=schemas.TicketOut, status_code=201)
@@ -18,17 +38,10 @@ def buy_ticket(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
-    session = (
-        db.query(models.Session)
-        .options(
-            joinedload(models.Session.film),
-            joinedload(models.Session.hall).joinedload(models.Hall.cinema),
-        )
-        .filter(models.Session.id == session_id)
-        .first()
-    )
+    session = _load_session(db, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Сеанс не найден")
+    recalculate_free_seats(db, session)
     if session.free_seats <= 0:
         raise HTTPException(status_code=400, detail="Свободных мест нет")
     if session.status != "active":
@@ -37,10 +50,7 @@ def buy_ticket(
         raise HTTPException(status_code=400, detail="Такого места в зале нет")
     if float(current_user.balance or 0) < session.price:
         raise HTTPException(status_code=400, detail="Недостаточно денег на балансе")
-    if db.query(models.Ticket).filter(
-        models.Ticket.session_id == session_id,
-        models.Ticket.seat_number == data.seat_number,
-    ).first():
+    if current_session_ticket_query(db, session).filter(models.Ticket.seat_number == data.seat_number).first():
         raise HTTPException(status_code=400, detail="Это место уже занято")
 
     ticket = models.Ticket(
@@ -86,7 +96,13 @@ def delete_all_my_tickets(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
+    session_ids = [
+        session_id for (session_id,) in db.query(models.Ticket.session_id)
+        .filter(models.Ticket.user_id == current_user.id)
+        .all()
+    ]
     db.query(models.Ticket).filter(models.Ticket.user_id == current_user.id).delete()
+    _recalculate_sessions(db, session_ids)
     db.commit()
 
 
@@ -102,5 +118,7 @@ def delete_my_ticket(
     ).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Билет не найден")
+    session_id = ticket.session_id
     db.delete(ticket)
+    _recalculate_sessions(db, [session_id])
     db.commit()
