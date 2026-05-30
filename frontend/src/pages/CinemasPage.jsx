@@ -242,7 +242,7 @@ function CinemaCard({ cinema, isAdmin, onDelete, onEdit }) {
         <Link className="truncate" to={`/cinemas/${cinema.id}`} style={{ fontWeight: 600, fontSize: 16 }}>{cinema.name}</Link>
         {isAdmin && (
           <div className="flex-gap">
-            <button className="btn-outline btn-sm" onClick={() => setEditing(true)}>Ред.</button>
+            <button className="btn-outline btn-sm" onClick={() => setEditing(true)}>✏️</button>
             <button className="btn-danger btn-sm icon-btn" title="Удалить" aria-label="Удалить" onClick={() => onDelete(cinema.id)}>🗑</button>
           </div>
         )}
