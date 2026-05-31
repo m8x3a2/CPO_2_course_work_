@@ -38,6 +38,7 @@ class Cinema(Base):
 
 class Hall(Base):
     __tablename__ = "halls"
+    __table_args__ = (UniqueConstraint("cinema_id", "name", name="uq_halls_cinema_name"),)
 
     id = Column(Integer, primary_key=True, index=True)
     cinema_id = Column(Integer, ForeignKey("cinemas.id"), nullable=False)

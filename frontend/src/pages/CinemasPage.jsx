@@ -251,13 +251,6 @@ function CinemaCard({ cinema, isAdmin, onDelete, onEdit }) {
       <p className="text-sm mt-8">Залов: <strong>{cinema.halls?.length ?? cinema.halls_count}</strong></p>
       {cinema.description && <p className="description-text text-sm mt-8">{cinema.description}</p>}
       <div className="mt-8">
-        {cinema.halls?.map(h => (
-          <span key={h.id} className="text-sm text-muted" style={{ marginRight: 8 }}>
-            {h.name} ({h.total_seats} мест)
-          </span>
-        ))}
-      </div>
-      <div className="mt-8">
         <Link to={`/cinemas/${cinema.id}`} className="text-sm">Подробнее</Link>
       </div>
     </div>

@@ -5,6 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session as DbSession
 
 from archive import backfill_ticket_archive_fields
+from config import CORS_ORIGINS
 from database import Base, engine, sync_serial_sequences
 from image_storage import UPLOAD_DIR, ensure_upload_dir, save_upload_bytes
 import models  # noqa: F401 - needed for table creation
@@ -17,6 +18,9 @@ Base.metadata.create_all(bind=engine)
 def upgrade_schema():
     statements = [
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS balance FLOAT NOT NULL DEFAULT 0",
+        "ALTER TABLE users DROP CONSTRAINT IF EXISTS ix_users_username",
+        "DROP INDEX IF EXISTS ix_users_username",
+        "CREATE INDEX IF NOT EXISTS ix_users_username ON users (username)",
         "ALTER TABLE users ADD CONSTRAINT uq_users_email UNIQUE (email)",
         "ALTER TABLE cinemas ADD COLUMN IF NOT EXISTS image_data TEXT",
         "ALTER TABLE cinemas ADD COLUMN IF NOT EXISTS description TEXT",
@@ -24,6 +28,7 @@ def upgrade_schema():
         "ALTER TABLE films ADD COLUMN IF NOT EXISTS image_data TEXT",
         "ALTER TABLE films ADD COLUMN IF NOT EXISTS duration_minutes INTEGER",
         "ALTER TABLE films ADD CONSTRAINT uq_films_title UNIQUE (title)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_halls_cinema_name ON halls (cinema_id, name)",
         "CREATE TABLE IF NOT EXISTS promo_codes (id SERIAL PRIMARY KEY, code VARCHAR(50) UNIQUE NOT NULL, max_uses INTEGER NOT NULL, amount FLOAT NOT NULL, created_at TIMESTAMP NOT NULL)",
         "CREATE INDEX IF NOT EXISTS ix_promo_codes_id ON promo_codes (id)",
         "CREATE INDEX IF NOT EXISTS ix_promo_codes_code ON promo_codes (code)",
@@ -64,12 +69,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-    ],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

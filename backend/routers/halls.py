@@ -8,6 +8,16 @@ import auth, models, schemas
 router = APIRouter(prefix="/halls", tags=["Halls"])
 
 
+def _hall_name_exists(db: Session, cinema_id: int, name: str, exclude_hall_id: int | None = None) -> bool:
+    query = db.query(models.Hall).filter(
+        models.Hall.cinema_id == cinema_id,
+        models.Hall.name == name,
+    )
+    if exclude_hall_id is not None:
+        query = query.filter(models.Hall.id != exclude_hall_id)
+    return db.query(query.exists()).scalar()
+
+
 @router.get("/cinema/{cinema_id}", response_model=list[schemas.HallOut])
 def list_halls(cinema_id: int, db: Session = Depends(get_db)):
     return db.query(models.Hall).filter(models.Hall.cinema_id == cinema_id).all()
@@ -22,6 +32,8 @@ def create_hall(
     cinema = db.query(models.Cinema).filter(models.Cinema.id == data.cinema_id).first()
     if not cinema:
         raise HTTPException(status_code=404, detail="Кинотеатр не найден")
+    if _hall_name_exists(db, data.cinema_id, data.name):
+        raise HTTPException(status_code=400, detail="В этом кинотеатре уже есть зал с таким названием")
     hall = models.Hall(**data.model_dump())
     db.add(hall)
     db.flush()
@@ -41,6 +53,11 @@ def update_hall(
     hall = db.query(models.Hall).filter(models.Hall.id == hall_id).first()
     if not hall:
         raise HTTPException(status_code=404, detail="Зал не найден")
+    cinema = db.query(models.Cinema).filter(models.Cinema.id == data.cinema_id).first()
+    if not cinema:
+        raise HTTPException(status_code=404, detail="Кинотеатр не найден")
+    if _hall_name_exists(db, data.cinema_id, data.name, exclude_hall_id=hall_id):
+        raise HTTPException(status_code=400, detail="В этом кинотеатре уже есть зал с таким названием")
     old_cinema_id = hall.cinema_id
     for k, v in data.model_dump().items():
         setattr(hall, k, v)
