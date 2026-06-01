@@ -1,4 +1,5 @@
 from datetime import datetime
+from collections import Counter
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
@@ -6,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from database import get_db
 from archive import backfill_ticket_archive_fields
-from session_tickets import current_session_ticket_query, recalculate_free_seats
+from session_tickets import current_session_ticket_query, recalculate_free_seats, restore_free_seats
 import auth, models, schemas
 
 router = APIRouter(prefix="/tickets", tags=["Tickets"])
@@ -24,11 +25,11 @@ def _load_session(db: Session, session_id: int):
     )
 
 
-def _recalculate_sessions(db: Session, session_ids):
-    for session_id in set(session_ids):
+def _restore_sessions(db: Session, session_counts):
+    for session_id, count in session_counts.items():
         session = _load_session(db, session_id)
         if session:
-            recalculate_free_seats(db, session)
+            restore_free_seats(db, session, count)
 
 
 @router.post("/{session_id}", response_model=schemas.TicketOut, status_code=201)
@@ -96,13 +97,13 @@ def delete_all_my_tickets(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
-    session_ids = [
+    session_counts = Counter(
         session_id for (session_id,) in db.query(models.Ticket.session_id)
         .filter(models.Ticket.user_id == current_user.id)
         .all()
-    ]
+    )
     db.query(models.Ticket).filter(models.Ticket.user_id == current_user.id).delete()
-    _recalculate_sessions(db, session_ids)
+    _restore_sessions(db, session_counts)
     db.commit()
 
 
@@ -120,5 +121,5 @@ def delete_my_ticket(
         raise HTTPException(status_code=404, detail="Билет не найден")
     session_id = ticket.session_id
     db.delete(ticket)
-    _recalculate_sessions(db, [session_id])
+    _restore_sessions(db, Counter([session_id]))
     db.commit()

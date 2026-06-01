@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { filmsApi, sessionsApi, resolveEntityImageSrc, usePlaceholderOnError } from '../api/index'
-import { fmtDateTime, fmtPrice } from '../utils'
+import { fmtDateTime, fmtPrice, fmtSeats } from '../utils'
 
 function fmtDuration(minutes) {
   if (!minutes) return null
@@ -80,7 +80,7 @@ export default function FilmDetailPage() {
                     <td className="text-wrap">{s.hall.name}</td>
                     <td className="date-cell">{fmtDateTime(s.datetime)}</td>
                     <td>{fmtPrice(s.price)}</td>
-                    <td>{s.free_seats}</td>
+                    <td>{fmtSeats(s)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -147,8 +147,17 @@ def update_session(
     session = db.query(models.Session).filter(models.Session.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Сеанс не найден")
+    hall = db.query(models.Hall).filter(models.Hall.id == data.hall_id).first()
+    if not hall:
+        raise HTTPException(status_code=404, detail="Зал не найден")
+    film = db.query(models.Film).filter(models.Film.id == data.film_id).first()
+    if not film:
+        raise HTTPException(status_code=404, detail="Фильм не найден")
+    if data.free_seats > hall.total_seats:
+        raise HTTPException(status_code=400, detail="Свободных мест больше, чем мест в зале")
     for k, v in data.model_dump().items():
         setattr(session, k, v)
+    recalculate_free_seats(db, session)
     db.commit()
     db.refresh(session)
     return session

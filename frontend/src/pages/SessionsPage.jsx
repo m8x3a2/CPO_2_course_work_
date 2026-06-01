@@ -1,8 +1,8 @@
-import { Fragment, useState, useEffect } from 'react'
+import { Fragment, useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { authApi, sessionsApi, filmsApi, cinemasApi, ticketsApi } from '../api/index'
 import { useAuth } from '../AuthContext'
-import { fmtDateTime, fmtPrice } from '../utils'
+import { fmtDateTime, fmtPrice, fmtSeats } from '../utils'
 
 const EMPTY_SESSION = { film_id: '', hall_id: '', datetime: '', price: '', free_seats: '', status: 'active' }
 const STATUS_LABELS = { active: 'Активен', cancelled: 'Отменен', finished: 'Завершен' }
@@ -24,6 +24,15 @@ export default function SessionsPage() {
   const [buyMsg, setBuyMsg] = useState({})
   const [seatPicker, setSeatPicker] = useState({})
   const [seatLoading, setSeatLoading] = useState(null)
+
+  const selectedHall = useMemo(
+    () => hallsForCinema.find(h => h.id === Number(form.hall_id)),
+    [hallsForCinema, form.hall_id]
+  )
+  const freeSeatsPreview = form.free_seats === '' ? 0 : Number(form.free_seats)
+  const freeSeatsPreviewText = selectedHall
+    ? `${Number.isFinite(freeSeatsPreview) ? freeSeatsPreview : 0}/${selectedHall.total_seats}`
+    : ''
 
   async function load(params = {}) {
     setLoading(true)
@@ -60,6 +69,32 @@ export default function SessionsPage() {
     if (!cinemaId) { setHallsForCinema([]); return }
     const c = cinemas.find(c => c.id === Number(cinemaId))
     setHallsForCinema(c?.halls || [])
+  }
+
+  function onHallChange(hallId) {
+    const hall = hallsForCinema.find(h => h.id === Number(hallId))
+    setForm(f => {
+      if (!hall || f.free_seats === '') return { ...f, hall_id: hallId }
+      const numericFreeSeats = Number(f.free_seats)
+      if (!Number.isFinite(numericFreeSeats)) return { ...f, hall_id: hallId }
+      return {
+        ...f,
+        hall_id: hallId,
+        free_seats: String(Math.min(numericFreeSeats, hall.total_seats)),
+      }
+    })
+  }
+
+  function onFreeSeatsChange(value) {
+    if (value === '') {
+      setForm(f => ({ ...f, free_seats: value }))
+      return
+    }
+    const numericValue = Number(value)
+    const nextValue = selectedHall && Number.isFinite(numericValue) && numericValue > selectedHall.total_seats
+      ? String(selectedHall.total_seats)
+      : value
+    setForm(f => ({ ...f, free_seats: nextValue }))
   }
 
   async function handleCreate(e) {
@@ -161,7 +196,7 @@ export default function SessionsPage() {
               </div>
               <div className="form-group">
                 <label>Зал *</label>
-                <select value={form.hall_id} onChange={e => setForm(f => ({ ...f, hall_id: e.target.value }))} required disabled={!selectedCinema}>
+                <select value={form.hall_id} onChange={e => onHallChange(e.target.value)} required disabled={!selectedCinema}>
                   <option value="">— выберите —</option>
                   {hallsForCinema.map(h => <option key={h.id} value={h.id}>{h.name} ({h.total_seats} мест)</option>)}
                 </select>
@@ -176,7 +211,15 @@ export default function SessionsPage() {
               </div>
               <div className="form-group">
                 <label>Свободных мест *</label>
-                <input type="number" min="0" value={form.free_seats} onChange={e => setForm(f => ({ ...f, free_seats: e.target.value }))} required />
+                <input
+                  type="number"
+                  min="0"
+                  max={selectedHall?.total_seats ?? undefined}
+                  value={form.free_seats}
+                  onChange={e => onFreeSeatsChange(e.target.value)}
+                  required
+                />
+                {freeSeatsPreviewText && <div className="text-muted text-sm">{freeSeatsPreviewText}</div>}
               </div>
               <div className="form-group">
                 <label>Статус</label>
@@ -249,7 +292,7 @@ export default function SessionsPage() {
                     <td className="text-wrap">{s.cinema_name}<br /><span className="text-muted text-sm">{s.hall.name}</span></td>
                     <td className="date-cell">{fmtDateTime(s.datetime)}</td>
                     <td>{fmtPrice(s.price)}</td>
-                    <td>{s.free_seats}</td>
+                    <td>{fmtSeats(s)}</td>
                     <td><span className={`badge badge-${s.status}`}>{STATUS_LABELS[s.status] || s.status}</span></td>
                     <td>
                       <div className="flex-gap">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { cinemasApi, hallsApi, sessionsApi, resolveEntityImageSrc, usePlaceholderOnError } from '../api/index'
 import { useAuth } from '../AuthContext'
-import { fmtDateTime, fmtPrice } from '../utils'
+import { fmtDateTime, fmtPrice, fmtSeats } from '../utils'
 
 const STATUS_LABELS = { active: 'Активен', cancelled: 'Отменен', finished: 'Завершен' }
 const TEXT_MAX_LENGTH = 100
@@ -146,7 +146,7 @@ export default function CinemaDetailPage() {
                     <td className="text-wrap">{s.hall.name}</td>
                     <td className="date-cell">{fmtDateTime(s.datetime)}</td>
                     <td>{fmtPrice(s.price)}</td>
-                    <td>{s.free_seats}</td>
+                    <td>{fmtSeats(s)}</td>
                     <td><span className={`badge badge-${s.status}`}>{STATUS_LABELS[s.status] || s.status}</span></td>
                   </tr>
                 ))}
