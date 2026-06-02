@@ -38,7 +38,7 @@ export default function SessionsPage() {
     setLoading(true)
     try {
       const data = await sessionsApi.list(params)
-      setSessions(data)
+      setSessions([...data].sort((a, b) => b.id - a.id))
     } catch (err) {
       setError(err.message)
     } finally {
